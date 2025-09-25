@@ -94,14 +94,14 @@ class Menu():
             return True
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
+                self.scenes = scenes
                 if self.index_scene < len(self.scenes) - 1 and self.index_scene != 1:
-                    self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
             
             if event.key == pygame.K_ESCAPE:
+                self.scenes = scenes_rev
                 if self.index_scene > 0:
-                    self.scenes = scenes_rev
                     self.index_scene -= 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
 
@@ -113,7 +113,6 @@ class Menu():
                     self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
-                    scene_changed = True
 
                 if self.button_exit and self.button_exit.is_clicked(pos) and self.index_scene == 0:
                     self.button_exit.run_music()
