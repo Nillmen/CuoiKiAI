@@ -34,10 +34,11 @@ scenes = [{
             "video_bg_path": video_bg_paths[0],
             "init" : {"ButtonExit" : 0, "TextContinue" : 0},
             "remove" : {},
-            "remain" : [],
+            "remain" : ["music_bg"],
             "event" : {
                 "K_SPACE" : {
-                    "scene" : all_frame
+                    "scene" : all_frame,
+                    "music_bg" : all_frame
                 }, 
                 "MOUSE1" : {
                     "ButtonExit" : all_frame
@@ -45,9 +46,9 @@ scenes = [{
             }
         }, {
             "video_bg_path": video_bg_paths[1],
-            "init" : {"ButtonStart" : -1, "TextEsc" : 0, "music_bg" : 0},
+            "init" : {"ButtonStart" : -1, "TextEsc" : 0},
             "remove" : {"ButtonExit" : 0, "TextContinue" : 0},
-            "remain" : [],
+            "remain" : ["music_bg"],
             "event" : {
                 "MOUSE1" : {
                     "ButtonStart" : -1
@@ -88,10 +89,10 @@ scenes_rev = [{
             "remain" : ["music_bg"],
             "event" : {
                 "K_SPACE" : {
-                    "scene" : all_frame
+                    "scene" : -1
                 },
                 "MOUSE1" : {
-                    "ButtonExit" : all_frame
+                    "ButtonExit" : -1
                 }
             }
         }, {
@@ -162,7 +163,11 @@ class Menu():
                     self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
-            
+                if "music_bg" in k_space_event_in_scene and k_space_event_in_scene.get("music_bg") == self.index_frame_video_bg and not self.music_bg_is_running:
+                    pygame.mixer.music.play(-1)
+                    self.music_bg_is_running = False
+
+
             if event.key == pygame.K_ESCAPE and "K_ESCAPE" in self.scenes[self.index_scene]["event"]:
                 k_esc_event_in_scene = self.scenes[self.index_scene]["event"]["K_ESCAPE"]
                 if "scene" in k_esc_event_in_scene and k_esc_event_in_scene.get("scene") == self.index_frame_video_bg:
@@ -262,10 +267,6 @@ class Menu():
                     object = TextEsc(self.screen)
             elif name in current_scene_config["remove"] and self.index_frame_video_bg == current_scene_config["remove"][name] and object is not None:
                 object = None
-        elif type == "music_bg":
-            if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and not object:
-                pygame.mixer.music.play(-1)
-                object = True
 
         return object
 
@@ -276,8 +277,6 @@ class Menu():
         
         self.text_continue = self.update_object("TextContinue", "text", self.text_continue)
         self.text_esc = self.update_object("TextEsc", "text", self.text_esc)
-
-        self.music_bg_is_running = self.update_object("music_bg", "music_bg", self.music_bg_is_running)
 
     def release(self):
         if self.cap is not None:
