@@ -24,43 +24,102 @@ pygame.mixer.music.load(music_bg_path)
 
 sound_clicked_button_path = r"sounds\buttonClicked.mp3"
 
+class QuantumInt():
+    def __eq__(self, value):
+        return isinstance(value, int)
+
+all_frame = QuantumInt()
+
 scenes = [{
             "video_bg_path": video_bg_paths[0],
             "init" : {"ButtonExit" : 0, "TextContinue" : 0},
             "remove" : {},
-            "remain" : []
+            "remain" : [],
+            "event" : {
+                "K_SPACE" : {
+                    "scene" : all_frame
+                }, 
+                "MOUSE1" : {
+                    "ButtonExit" : all_frame
+                }
+            }
         }, {
             "video_bg_path": video_bg_paths[1],
             "init" : {"ButtonStart" : -1, "TextEsc" : 0, "music_bg" : 0},
             "remove" : {"ButtonExit" : 0, "TextContinue" : 0},
-            "remain" : []
+            "remain" : [],
+            "event" : {
+                "MOUSE1" : {
+                    "ButtonStart" : -1
+                },
+                "K_ESCAPE" : {
+                    "TextEsc" : -1
+                }
+            }
         }, {
             "video_bg_path": video_bg_paths[2],
             "init" : {"TextContinue" : 0},
             "remove" : {"ButtonStart" : 0},
-            "remain" : ["TextEsc", "music_bg"]
+            "remain" : ["TextEsc", "music_bg"],
+            "event" : {
+                "K_SPACE" : {
+                    "scene" : -1
+                },
+                "K_ESCAPE" : {
+                    "scene" : -1
+                }
+            }
         }, {
             "video_bg_path": video_bg_paths[3],
             "init" : {},
             "remove" : {"TextContinue" : 0},
-            "remain" : ["TextEsc", "music_bg"]
+            "remain" : ["TextEsc", "music_bg"],
+            "event" : {
+                "K_ESCAPE" : {
+                    "scene" : -1
+                }
+            }
         }]
 
-scenes_rev = [ {
+scenes_rev = [{
             "video_bg_rev_path": video_bg_rev_paths[0],
             "init" : {"ButtonExit" : -1, "TextContinue" : 0},
             "remove" : {"ButtonStart" : 0, "TextEsc" : 0},
-            "remain" : ["music_bg"]
+            "remain" : ["music_bg"],
+            "event" : {
+                "K_SPACE" : {
+                    "scene" : all_frame
+                },
+                "MOUSE1" : {
+                    "ButtonExit" : all_frame
+                }
+            }
         }, {
             "video_bg_rev_path": video_bg_rev_paths[1],
             "init" : {"ButtonStart" : -1},
             "remove" : {"TextContinue" : 0},
-            "remain" : ["TextEsc", "music_bg"]
+            "remain" : ["TextEsc", "music_bg"],
+            "event" : {
+                "MOUSE1" : {
+                    "ButtonStart" : -1
+                },
+                "K_ESCAPE" : {
+                    "scene" : -1
+                }
+            }
         }, {
             "video_bg_rev_path": video_bg_rev_paths[2],
             "init" : {"TextContinue" : 0},
             "remove" : {},
-            "remain" : ["TextEsc", "music_bg"]
+            "remain" : ["TextEsc", "music_bg"],
+            "event" : {
+                "K_SPACE" : {
+                    "scene" : -1
+                },
+                "K_ESCAPE" : {
+                    "scene" : -1
+                }
+            }
         }]
 
 def select_scenes(index):
@@ -96,31 +155,32 @@ class Menu():
         self.set_background(self.scenes[self.index_scene]["video_bg_path"])
 
     def handle_events(self, event):
-        if self.scenes != scenes and self.index_scene != 0 and self.index_frame_video_bg != -1:
-            return True
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                self.scenes = scenes
-                if self.index_scene < len(self.scenes) - 1 and self.index_scene != 1:
+            if event.key == pygame.K_SPACE and "K_SPACE" in self.scenes[self.index_scene]["event"]:
+                k_space_event_in_scene = self.scenes[self.index_scene]["event"]["K_SPACE"]
+                if "scene" in k_space_event_in_scene and k_space_event_in_scene.get("scene") == self.index_frame_video_bg:
+                    self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
             
-            if event.key == pygame.K_ESCAPE:
-                self.scenes = scenes_rev
-                if self.index_scene > 0:
+            if event.key == pygame.K_ESCAPE and "K_ESCAPE" in self.scenes[self.index_scene]["event"]:
+                k_esc_event_in_scene = self.scenes[self.index_scene]["event"]["K_ESCAPE"]
+                if "scene" in k_esc_event_in_scene and k_esc_event_in_scene.get("scene") == self.index_frame_video_bg:
+                    self.scenes = scenes_rev
                     self.index_scene -= 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
+            if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
+                mouse1_event_in_scene = self.scenes[self.index_scene]["event"]["MOUSE1"]
                 pos = pygame.mouse.get_pos()
-                if self.button_start and self.button_start.is_clicked(pos) and self.index_scene == 1:
+                if "ButtonStart" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start.is_clicked(pos):
                     self.button_start.run_music()
                     self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
 
-                if self.button_exit and self.button_exit.is_clicked(pos) and self.index_scene == 0:
+                if "ButtonExit" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonExit") == self.index_frame_video_bg and self.button_exit.is_clicked(pos):
                     self.button_exit.run_music()
                     return False
         
