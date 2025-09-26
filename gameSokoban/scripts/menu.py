@@ -16,8 +16,13 @@ video_bg_rev_paths = [
     r"gameSokoban\assets\videos\3_rev.mp4"
 ]
 
-music_bg_path = r"gameSokoban\sounds\FrenchFuse-Space-YouTube.mp3"
-music_bg = pygame.mixer.Sound(music_bg_path)
+image_button_start_paths = [r"gameSokoban\assets\images\startButton.png", r"gameSokoban\assets\images\aroundButtonStart.png"]
+gif_button_exit_path = r"gameSokoban\assets\images\buttonExit.gif"
+
+music_bg_path = r"gameSokoban\sounds\FrenchFuse-Space-YouTube.wav"
+pygame.mixer.music.load(music_bg_path)
+
+sound_clicked_button_path = r"gameSokoban\sounds\buttonClicked.wav"
 
 scenes = [{
             "video_bg_path": video_bg_paths[0],
@@ -84,7 +89,6 @@ class Menu():
         self.text_continue = TextContinue(self.screen)
         self.text_esc = None
 
-        self.music_bg = music_bg
         self.music_bg_is_running = False
 
         self.set_background(self.scenes[self.index_scene]["video_bg_path"])
@@ -198,7 +202,7 @@ class Menu():
                 object = None
         elif type == "music_bg":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and not object:
-                self.music_bg.play(-1)
+                pygame.mixer.music.play(-1)
                 object = True
 
         return object
@@ -221,14 +225,14 @@ class ButtonStart():
     def __init__(self, screen, buttonStart_old):
         self.screen = screen
         self.buttonStart_old = buttonStart_old
-        self.image_main_ori = pygame.image.load(r"gameSokoban\assets\images\startButton.png").convert_alpha()
+        self.image_main_ori = pygame.image.load(image_button_start_paths[0]).convert_alpha()
         self.image_main_size = (120, 120)
         self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
         self.rect_main = self.image_main.get_rect()
 
         self.scenes = None
 
-        self.image_around_ori = pygame.image.load(r"gameSokoban\assets\images\aroundButtonStart.png").convert_alpha()
+        self.image_around_ori = pygame.image.load(image_button_start_paths[1]).convert_alpha()
         self.image_around_size = (180, 180)
         if self.buttonStart_old:
             self.image_around_size = self.buttonStart_old.image_around_size
@@ -257,14 +261,14 @@ class ButtonStart():
             self.zoom_goal_rate = self.buttonStart_old.zoom_init_rate
             self.zoom_current_rate = self.buttonStart_old.zoom_current_rate
 
-        self.clicked_music_path = r"gameSokoban\sounds\buttonClicked.mp3"
-        self.clicked_music = pygame.mixer.Sound(self.clicked_music_path)
+        self.clicked_sound_path = sound_clicked_button_path
+        self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
 
     def is_clicked(self, pos):
         return self.rect_main.collidepoint(pos)
     
     def run_music(self):
-        self.clicked_music.play()
+        self.clicked_sound.play()
 
     def is_removed(self, index, scenes):
         if "ButtonStart" in self.scenes[index]["remove"]:
@@ -309,7 +313,7 @@ class ButtonExit():
     def __init__(self, screen, buttonExit_old):
         self.screen = screen
         self.buttonExit_old = buttonExit_old
-        self.gif_path = r"gameSokoban\assets\images\buttonExit.gif"
+        self.gif_path = gif_button_exit_path
         self.size = (100, 100)
         self.frames = self.load_gif_frames()
         self.frame_index = 0
@@ -327,8 +331,8 @@ class ButtonExit():
             self.init_pos = self.buttonExit_old.pos_goal_center
             self.pos_current_center = self.buttonExit_old.pos_current_center
 
-        self.clicked_music_path = r"gameSokoban\sounds\buttonClicked.mp3"
-        self.clicked_music = pygame.mixer.Sound(self.clicked_music_path)
+        self.clicked_sound_path = sound_clicked_button_path
+        self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
         self.font = pygame.font.SysFont("Arial", 18)
         self.text_exit = self.font.render("Exit", True, (255,255,255))
         self.text_exit_rect = self.text_exit.get_rect(center=self.pos_current_center)
@@ -360,7 +364,7 @@ class ButtonExit():
         return False
     
     def run_music(self):
-        self.clicked_music.play()
+        self.clicked_sound.play()
     
     def is_clicked(self, pos):
         return self.rect.collidepoint(pos) or self.text_exit_rect.collidepoint(pos)
