@@ -333,7 +333,7 @@ class ButtonStart():
         self.clicked_sound.play()
 
     def is_removed(self, index, scenes):
-        if "ButtonStart" in self.scenes[index]["remove"]:
+        if "ButtonStart" in scenes[index]["remove"]:
             return True
         return False
 
