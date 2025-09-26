@@ -53,7 +53,7 @@ scenes = [{
                     "ButtonStart" : -1
                 },
                 "K_ESCAPE" : {
-                    "TextEsc" : -1
+                    "scene" : -1
                 }
             }
         }, {
