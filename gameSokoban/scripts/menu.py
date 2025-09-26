@@ -5,24 +5,24 @@ from PIL import Image
 pygame.mixer.init()
 
 video_bg_paths = [
-    r"gameSokoban\assets\videos\0.mp4",
-    r"gameSokoban\assets\videos\1.mp4",
-    r"gameSokoban\assets\videos\2.mp4",
-    r"gameSokoban\assets\videos\3.mp4"
+    r"assets\videos\0.mp4",
+    r"assets\videos\1.mp4",
+    r"assets\videos\2.mp4",
+    r"assets\videos\3.mp4"
 ]
 video_bg_rev_paths = [
-    r"gameSokoban\assets\videos\1_rev.mp4",
-    r"gameSokoban\assets\videos\2_rev.mp4",
-    r"gameSokoban\assets\videos\3_rev.mp4"
+    r"assets\videos\1_rev.mp4",
+    r"assets\videos\2_rev.mp4",
+    r"assets\videos\3_rev.mp4"
 ]
 
-image_button_start_paths = [r"gameSokoban\assets\images\startButton.png", r"gameSokoban\assets\images\aroundButtonStart.png"]
-gif_button_exit_path = r"gameSokoban\assets\images\buttonExit.gif"
+image_button_start_paths = [r"assets\images\startButton.png", r"assets\images\aroundButtonStart.png"]
+gif_button_exit_path = r"assets\images\buttonExit.gif"
 
-music_bg_path = r"gameSokoban\sounds\FrenchFuse-Space-YouTube.mp3"
+music_bg_path = r"sounds\FrenchFuse-Space-YouTube.mp3"
 pygame.mixer.music.load(music_bg_path)
 
-sound_clicked_button_path = r"gameSokoban\sounds\buttonClicked.mp3"
+sound_clicked_button_path = r"sounds\buttonClicked.mp3"
 
 scenes = [{
             "video_bg_path": video_bg_paths[0],
@@ -70,8 +70,10 @@ def select_scenes(index):
         return scenes_rev
 
 class Menu():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = window.screen
+        self.window.set_data("status_screen", "menu")
 
         self.cap = None
         self.last_frame_surface = None
@@ -85,7 +87,7 @@ class Menu():
         self.index_frame_video_bg = None
 
         self.button_start = None
-        self.button_exit = ButtonExit(screen, None)
+        self.button_exit = ButtonExit(self.screen, None)
         self.text_continue = TextContinue(self.screen)
         self.text_esc = None
 
@@ -174,7 +176,7 @@ class Menu():
 
     def run(self):
         self.draw_background()
-        self.transition_scene()
+        self.transition_object()
         self.draw_ui()
         pygame.display.flip()
         self.clock.tick(30)
@@ -207,7 +209,7 @@ class Menu():
 
         return object
 
-    def transition_scene(self):
+    def transition_object(self):
 
         self.button_start = self.update_object("ButtonStart", "button", self.button_start)
         self.button_exit = self.update_object("ButtonExit", "button", self.button_exit)
