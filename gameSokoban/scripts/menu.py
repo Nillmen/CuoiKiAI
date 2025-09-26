@@ -19,10 +19,10 @@ video_bg_rev_paths = [
 image_button_start_paths = [r"gameSokoban\assets\images\startButton.png", r"gameSokoban\assets\images\aroundButtonStart.png"]
 gif_button_exit_path = r"gameSokoban\assets\images\buttonExit.gif"
 
-music_bg_path = r"gameSokoban\sounds\FrenchFuse-Space-YouTube.wav"
+music_bg_path = r"gameSokoban\sounds\FrenchFuse-Space-YouTube.mp3"
 pygame.mixer.music.load(music_bg_path)
 
-sound_clicked_button_path = r"gameSokoban\sounds\buttonClicked.wav"
+sound_clicked_button_path = r"gameSokoban\sounds\buttonClicked.mp3"
 
 scenes = [{
             "video_bg_path": video_bg_paths[0],
