@@ -51,7 +51,8 @@ scenes = [{
             "remain" : ["music_bg"],
             "event" : {
                 "MOUSE1" : {
-                    "ButtonStart" : -1
+                    "ButtonStart" : -1,
+                    "scene" : -1
                 },
                 "K_ESCAPE" : {
                     "scene" : -1
@@ -181,6 +182,8 @@ class Menu():
                 pos = pygame.mouse.get_pos()
                 if "ButtonStart" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start.is_clicked(pos):
                     self.button_start.run_music()
+                
+                if "scene" in mouse1_event_in_scene and mouse1_event_in_scene.get("scene") == self.index_frame_video_bg and self.button_start.is_clicked(pos):    
                     self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
@@ -198,10 +201,11 @@ class Menu():
         self.cap = cv2.VideoCapture(video_path)
         self.last_frame_surface = None
 
-        self.width  = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        if self.width != int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or self.height != int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)):
+            self.width  = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        self.screen = pygame.display.set_mode((self.width, self.height))
+            self.screen = pygame.display.set_mode((self.width, self.height))
 
     def draw_background(self):
 
