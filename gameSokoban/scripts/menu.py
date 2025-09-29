@@ -18,6 +18,7 @@ video_bg_rev_paths = [
 
 image_button_start_paths = [r"assets\images\startButton.png", r"assets\images\aroundButtonStart.png"]
 gif_button_exit_path = r"assets\images\buttonExit.gif"
+image_human_selector_paths = [r"assets\images\humanSelector.png", r"assets\images\clickedhumanselector.png"]
 
 music_bg_path = r"sounds\FrenchFuse-Space-YouTube.mp3"
 pygame.mixer.music.load(music_bg_path)
@@ -103,7 +104,8 @@ scenes_rev = [{
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "MOUSE1" : {
-                    "ButtonStart" : -1
+                    "ButtonStart" : -1,
+                    "scene" : -1
                 },
                 "K_ESCAPE" : {
                     "scene" : -1
@@ -180,15 +182,15 @@ class Menu():
             if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
                 mouse1_event_in_scene = self.scenes[self.index_scene]["event"]["MOUSE1"]
                 pos = pygame.mouse.get_pos()
-                if "ButtonStart" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start.is_clicked(pos):
+                if "ButtonStart" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start.check_collided(pos):
                     self.button_start.run_music()
                 
-                if "scene" in mouse1_event_in_scene and mouse1_event_in_scene.get("scene") == self.index_frame_video_bg and self.button_start.is_clicked(pos):    
+                if "scene" in mouse1_event_in_scene and mouse1_event_in_scene.get("scene") == self.index_frame_video_bg and self.button_start.check_collided(pos):    
                     self.scenes = scenes
                     self.index_scene += 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_path"])
 
-                if "ButtonExit" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonExit") == self.index_frame_video_bg and self.button_exit.is_clicked(pos):
+                if "ButtonExit" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonExit") == self.index_frame_video_bg and self.button_exit.check_collided(pos):
                     self.button_exit.run_music()
                     return False
         
@@ -235,12 +237,12 @@ class Menu():
 
         if self.button_start:
             self.button_start.effect_movement(self.index_scene, self.scenes)
-            if self.button_start.rect_main.centerx <= self.button_start.pos_goal_center[0] and self.button_start.is_removed(self.index_scene, self.scenes):
+            if self.button_start.rect_main.centerx <= self.button_start.pos_goal_center[0] and "ButtonStart" in self.scenes[self.index_scene]["remove"]:
                 self.button_start = None
 
         if self.button_exit:
             self.button_exit.effect_movement(self.index_scene, self.scenes)
-            if self.button_exit.rect.centerx <= self.button_exit.pos_goal_center[0] and self.button_exit.is_removed(self.index_scene, self.scenes):
+            if self.button_exit.rect.centerx <= self.button_exit.pos_goal_center[0] and "ButtonExit" in self.scenes[self.index_scene]["remove"]:
                 self.button_exit = None 
 
     def run(self):
@@ -329,16 +331,11 @@ class ButtonStart():
         self.clicked_sound_path = sound_clicked_button_path
         self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
 
-    def is_clicked(self, pos):
+    def check_collided(self, pos):
         return self.rect_main.collidepoint(pos)
     
     def run_music(self):
         self.clicked_sound.play()
-
-    def is_removed(self, index, scenes):
-        if "ButtonStart" in scenes[index]["remove"]:
-            return True
-        return False
 
     def effect_movement(self, index, scenes, speed=10, speed_around=4, speed_zoom=0.01):
         self.scenes = scenes
@@ -422,16 +419,11 @@ class ButtonExit():
 
         self.screen.blit(self.frames[self.frame_index], rect)
         self.screen.blit(self.text_exit, self.text_exit_rect)
-
-    def is_removed(self, index, scenes):
-        if "ButtonExit" in scenes[index]["remove"]:
-            return True
-        return False
     
     def run_music(self):
         self.clicked_sound.play()
     
-    def is_clicked(self, pos):
+    def check_collided(self, pos):
         return self.rect.collidepoint(pos) or self.text_exit_rect.collidepoint(pos)
     
     def load_gif_frames(self):
@@ -455,7 +447,7 @@ class TextContinue():
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 18)
-        self.text = "Press SPACE to continue..."
+        self.text = "Nhấn SPACE để tiếp tục..."
         self.color = (255, 255, 255)
         self.image = self.font.render(self.text, True, self.color)
         self.pos_center = (650, 690)
@@ -469,7 +461,7 @@ class TextEsc():
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 18)
-        self.text = "Press ESC to go back..."
+        self.text = "Nhấn ESC để quay lại..."
         self.color = (255, 255, 255)
         self.image = self.font.render(self.text, True, self.color)
         self.pos_center = (1180, 20)
@@ -478,3 +470,58 @@ class TextEsc():
     def draw(self, t, speed_time=500):
         if (t // speed_time) % 2 == 0:
             self.screen.blit(self.image, self.rect)
+
+class TextDetailMode():
+    def __init__(self, screen):
+        self.screen = screen
+        self.font = pygame.font.SysFont("Arial", 20, bold=True)
+        self.text = "CHỌN CHẾ ĐỘ"
+        self.color = (255, 255, 255)
+        self.image = self.font.render(self.text, True, self.color)
+        self.pos_center = (1180, 20)
+        self.rect = self.image.get_rect(center=self.pos_center)
+
+    def draw(self):
+        pass
+
+class ButtonhumanSelector():
+    def __init__(self, screen, humanSelector_old):
+        self.screen = screen
+        self.humanSelector = humanSelector_old
+        
+        self.image_changing = False
+        if humanSelector_old:
+            self.image_changing = True
+        
+        self.image_ori = pygame.image.load(image_human_selector_paths[int(self.image_changing)]).convert_alpha()
+        self.image_size = (120, 120)
+        self.image = pygame.transform.scale(self.image_ori, self.image_size)
+        self.rect = self.image.get_rect()
+
+        self.pos_init_center = ()
+        self.pos_goal_center = ()
+        self.pos_curren_center = self.pos_init_center
+
+        if humanSelector_old:
+            self.pos_init_center = self.humanSelector.pos_goal_center
+            self.pos_goal_center = self.humanSelector.pos_init_center
+            self.pos_curren_center = self.humanSelector.pos_current_center
+        self.rect.center = self.pos_curren_center
+
+        self.clicked_sound_path = sound_clicked_button_path
+        self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
+
+    def change_image(self):
+        self.image_changing = not self.image_changing
+        self.image_ori = pygame.image.load(image_human_selector_paths[int(self.image_changing)]).convert_alpha()
+        self.image = pygame.transform.scale(self.image_ori, self.image_size)
+        self.rect = self.image.get_rect()
+
+    def check_collided(self, pos):
+        self.rect.collidepoint(pos)
+
+    def run_music(self):
+        self.clicked_sound.play()
+
+    def effect_movement(self):
+        pass
