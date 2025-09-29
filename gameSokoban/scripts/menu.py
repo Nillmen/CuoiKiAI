@@ -1,5 +1,6 @@
 import pygame
 import cv2
+import math
 from PIL import Image
 
 pygame.mixer.init()
@@ -29,7 +30,30 @@ class QuantumInt():
     def __eq__(self, value):
         return isinstance(value, int)
 
+class ExtraFunc():
+    def __init__(self):
+        pass
+    def normalize_speed(self, d, s):
+
+        frac, interger = math.modf(round(d / s, 5))
+        if frac >= 0.5:
+            s = d / (interger + 1)
+        elif 0 < frac < 0.5:
+            s = d / (interger - 1)
+        return s
+    def direction(self, a):
+        if a != 0:
+            return a / abs(a)
+        else:
+            return a
+    def distance(self, a, b):
+        dx = (b[0] - a[0])**2
+        dy = (b[1] - a[1])**2
+        d = math.sqrt(dx + dy)
+        return round(d, 5)
+            
 all_frame = QuantumInt()
+extra_func = ExtraFunc()
 
 scenes = [{
             "video_bg_path": video_bg_paths[0],
@@ -56,7 +80,8 @@ scenes = [{
                     "scene" : -1
                 },
                 "K_ESCAPE" : {
-                    "scene" : -1
+                    "scene" : -1,
+                    "ButtonStart" : -1
                 }
             }
         }, {
@@ -108,7 +133,8 @@ scenes_rev = [{
                     "scene" : -1
                 },
                 "K_ESCAPE" : {
-                    "scene" : -1
+                    "scene" : -1,
+                    "ButtonStart" : -1
                 }
             }
         }, {
@@ -177,6 +203,8 @@ class Menu():
                     self.scenes = scenes_rev
                     self.index_scene -= 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
+                if "ButtonStart" in k_esc_event_in_scene and k_esc_event_in_scene.get("ButtonStart") == self.index_frame_video_bg:
+                    self.button_start.clicked()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
@@ -184,6 +212,7 @@ class Menu():
                 pos = pygame.mouse.get_pos()
                 if "ButtonStart" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start.check_collided(pos):
                     self.button_start.run_music()
+                    self.button_start.clicked()
                 
                 if "scene" in mouse1_event_in_scene and mouse1_event_in_scene.get("scene") == self.index_frame_video_bg and self.button_start.check_collided(pos):    
                     self.scenes = scenes
@@ -236,9 +265,9 @@ class Menu():
             self.text_esc.draw(t)
 
         if self.button_start:
-            self.button_start.effect_movement(self.index_scene, self.scenes)
-            if self.button_start.rect_main.centerx <= self.button_start.pos_goal_center[0] and "ButtonStart" in self.scenes[self.index_scene]["remove"]:
-                self.button_start = None
+            self.button_start.effect_movement(self.scenes)
+            #if self.button_start.rect_main.centerx <= self.button_start.pos_goal_center[0] and "ButtonStart" in self.scenes[self.index_scene]["remove"]:
+                #self.button_start = None
 
         if self.button_exit:
             self.button_exit.effect_movement(self.index_scene, self.scenes)
@@ -257,13 +286,15 @@ class Menu():
         if type == "button":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
                 if name == "ButtonStart":
-                    object = ButtonStart(self.screen, object)
+                    #object = ButtonStart(self.screen, object)
+                    object = ButtonStart(self.screen)
                 elif name == "ButtonExit":
                     object = ButtonExit(self.screen, object)
-            elif name in current_scene_config["remove"] and self.index_frame_video_bg == current_scene_config["remove"][name] and object is not None:
-                if name == "ButtonStart":
-                    object = ButtonStart(self.screen, object)
-                elif name == "ButtonExit":
+            elif name in current_scene_config["remove"] and object is not None:
+                if name == "ButtonStart" and object.out_screen:
+                    #object = ButtonStart(self.screen, object)
+                    object = None
+                elif name == "ButtonExit" and self.index_frame_video_bg == current_scene_config["remove"][name]:
                     object = ButtonExit(self.screen, object)
         elif type == "text":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
@@ -289,9 +320,8 @@ class Menu():
             self.cap.release()
 
 class ButtonStart():
-    def __init__(self, screen, buttonStart_old):
+    def __init__(self, screen):
         self.screen = screen
-        self.buttonStart_old = buttonStart_old
         self.image_main_ori = pygame.image.load(image_button_start_paths[0]).convert_alpha()
         self.image_main_size = (120, 120)
         self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
@@ -301,35 +331,36 @@ class ButtonStart():
 
         self.image_around_ori = pygame.image.load(image_button_start_paths[1]).convert_alpha()
         self.image_around_size = (180, 180)
-        if self.buttonStart_old:
-            self.image_around_size = self.buttonStart_old.image_around_size
+
         self.image_around = pygame.transform.scale(self.image_around_ori, self.image_around_size)
         self.rect_around = self.image_around.get_rect()
         
         self.pos_init_center = (-100, 160)
         self.pos_goal_center = (200, 160)
         self.pos_current_center = self.pos_init_center
-        if self.buttonStart_old:
-            self.pos_init_center = self.buttonStart_old.pos_goal_center
-            self.pos_goal_center = self.buttonStart_old.pos_init_center
-            self.pos_current_center = self.buttonStart_old.pos_current_center
+
         self.rect_main.center = self.pos_current_center
         self.rect_around.center = self.rect_main.center
 
         self.angle = 0
-        if self.buttonStart_old:
-            self.angle = self.buttonStart_old.angle
 
         self.zoom_init_rate = 0.7
         self.zoom_goal_rate = 1.0
         self.zoom_current_rate = self.zoom_init_rate
-        if self.buttonStart_old:
-            self.zoom_init_rate = self.buttonStart_old.zoom_goal_rate
-            self.zoom_goal_rate = self.buttonStart_old.zoom_init_rate
-            self.zoom_current_rate = self.buttonStart_old.zoom_current_rate
 
         self.clicked_sound_path = sound_clicked_button_path
         self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
+        self.out_screen = True
+
+    def set_out_screen(self):
+        if self.pos_current_center[0] <= - (self.image_around.get_size()[0] / 2) or self.pos_current_center[1] <= - (self.image_around.get_size()[1] / 2):
+            self.out_screen = True
+        else:
+            self.out_screen = False
+
+    def clicked(self):
+        self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
+        self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
 
     def check_collided(self, pos):
         return self.rect_main.collidepoint(pos)
@@ -337,26 +368,23 @@ class ButtonStart():
     def run_music(self):
         self.clicked_sound.play()
 
-    def effect_movement(self, index, scenes, speed=10, speed_around=4, speed_zoom=0.01):
+    def effect_movement(self, scenes, speed=10, speed_around=4, speed_zoom=0.01):
         self.scenes = scenes
+        speed = extra_func.normalize_speed(extra_func.distance(self.pos_init_center, self.pos_goal_center), speed)
+        distance_zoom = round(self.pos_goal_center[0] - self.pos_current_center[0], 5)
+        speed_zoom = extra_func.normalize_speed(distance_zoom, speed_zoom)
         
-        if "ButtonStart" in self.scenes[index]["init"]:
-            if self.rect_main.centerx < self.pos_goal_center[0]:
-                self.rect_main.centerx += speed
-                self.rect_around.centerx += speed
+        dx = round(self.pos_goal_center[0] - self.rect_main.centerx, 5)
+        d = extra_func.direction(dx)
+        self.rect_main.centerx += speed*d
+        self.rect_around.centerx = self.rect_main.centerx
 
-            if self.zoom_current_rate < self.zoom_goal_rate:
-                self.zoom_current_rate += speed_zoom
-
-        elif "ButtonStart" in self.scenes[index]["remove"]:
-            if self.rect_main.centerx > self.pos_goal_center[0]:
-                self.rect_main.centerx -= speed
-                self.rect_around.centerx -= speed
-
-            if self.zoom_current_rate > self.zoom_goal_rate:
-                self.zoom_current_rate -= speed_zoom
-        
         self.pos_current_center = self.rect_main.center
+
+        dz = round(self.zoom_goal_rate - self.zoom_current_rate, 5)
+        d = extra_func.direction(dz)
+        self.zoom_current_rate += speed_zoom*d
+
 
         if self.angle >= 360:
             self.angle = 0
@@ -364,6 +392,8 @@ class ButtonStart():
 
         self.image_around = pygame.transform.scale(self.image_around_ori, (int(self.image_around_size[0]*self.zoom_current_rate), int(self.image_around_size[1]*self.zoom_current_rate)))
         self.rect_around = self.image_around.get_rect(center=self.rect_around.center)
+
+        self.set_out_screen()
         
         rotated = pygame.transform.rotate(self.image_around, self.angle)
         rect_rotated = rotated.get_rect(center=self.rect_around.center)
