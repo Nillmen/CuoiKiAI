@@ -63,7 +63,8 @@ scenes = [{
             "event" : {
                 "K_SPACE" : {
                     "scene" : all_frame,
-                    "music_bg" : all_frame
+                    "music_bg" : all_frame,
+                    "ButtonExit" : all_frame
                 }, 
                 "MOUSE1" : {
                     "ButtonExit" : all_frame
@@ -116,7 +117,8 @@ scenes_rev = [{
             "remain" : ["music_bg"],
             "event" : {
                 "K_SPACE" : {
-                    "scene" : -1
+                    "scene" : -1,
+                    "ButtonExit" : -1
                 },
                 "MOUSE1" : {
                     "ButtonExit" : -1
@@ -176,7 +178,7 @@ class Menu():
         self.index_frame_video_bg = None
 
         self.button_start = None
-        self.button_exit = ButtonExit(self.screen, None)
+        self.button_exit = ButtonExit(self.screen)
         self.text_continue = TextContinue(self.screen)
         self.text_esc = None
 
@@ -195,6 +197,8 @@ class Menu():
                 if "music_bg" in k_space_event_in_scene and k_space_event_in_scene.get("music_bg") == self.index_frame_video_bg and not self.music_bg_is_running:
                     pygame.mixer.music.play(-1)
                     self.music_bg_is_running = False
+                if "ButtonExit" in k_space_event_in_scene and k_space_event_in_scene.get("ButtonExit") == self.index_frame_video_bg:
+                    self.button_exit.space_action()
 
 
             if event.key == pygame.K_ESCAPE and "K_ESCAPE" in self.scenes[self.index_scene]["event"]:
@@ -204,7 +208,7 @@ class Menu():
                     self.index_scene -= 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
                 if "ButtonStart" in k_esc_event_in_scene and k_esc_event_in_scene.get("ButtonStart") == self.index_frame_video_bg:
-                    self.button_start.clicked()
+                    self.button_start.escape_action()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
@@ -265,14 +269,10 @@ class Menu():
             self.text_esc.draw(t)
 
         if self.button_start:
-            self.button_start.effect_movement(self.scenes)
-            #if self.button_start.rect_main.centerx <= self.button_start.pos_goal_center[0] and "ButtonStart" in self.scenes[self.index_scene]["remove"]:
-                #self.button_start = None
+            self.button_start.effect_movement()
 
         if self.button_exit:
-            self.button_exit.effect_movement(self.index_scene, self.scenes)
-            if self.button_exit.rect.centerx <= self.button_exit.pos_goal_center[0] and "ButtonExit" in self.scenes[self.index_scene]["remove"]:
-                self.button_exit = None 
+            self.button_exit.effect_movement()
 
     def run(self):
         self.draw_background()
@@ -286,16 +286,11 @@ class Menu():
         if type == "button":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
                 if name == "ButtonStart":
-                    #object = ButtonStart(self.screen, object)
                     object = ButtonStart(self.screen)
                 elif name == "ButtonExit":
-                    object = ButtonExit(self.screen, object)
-            elif name in current_scene_config["remove"] and object is not None:
-                if name == "ButtonStart" and object.out_screen:
-                    #object = ButtonStart(self.screen, object)
-                    object = None
-                elif name == "ButtonExit" and self.index_frame_video_bg == current_scene_config["remove"][name]:
-                    object = ButtonExit(self.screen, object)
+                    object = ButtonExit(self.screen)
+            elif name in current_scene_config["remove"] and object is not None and object.out_screen:
+                object = None
         elif type == "text":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
                 if name == "TextContinue":
@@ -353,10 +348,13 @@ class ButtonStart():
         self.out_screen = True
 
     def set_out_screen(self):
-        if self.pos_current_center[0] <= - (self.image_around.get_size()[0] / 2) or self.pos_current_center[1] <= - (self.image_around.get_size()[1] / 2):
+        if self.pos_current_center[0] <= - (self.image_around.get_size()[0] / 2):
             self.out_screen = True
         else:
             self.out_screen = False
+
+    def escape_action(self):
+        self.clicked()
 
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
@@ -368,8 +366,7 @@ class ButtonStart():
     def run_music(self):
         self.clicked_sound.play()
 
-    def effect_movement(self, scenes, speed=10, speed_around=4, speed_zoom=0.01):
-        self.scenes = scenes
+    def effect_movement(self, speed=10, speed_around=4, speed_zoom=0.01):
         speed = extra_func.normalize_speed(extra_func.distance(self.pos_init_center, self.pos_goal_center), speed)
         distance_zoom = round(self.pos_goal_center[0] - self.pos_current_center[0], 5)
         speed_zoom = extra_func.normalize_speed(distance_zoom, speed_zoom)
@@ -402,26 +399,21 @@ class ButtonStart():
         self.screen.blit(self.image_main, self.rect_main)
 
 class ButtonExit():
-    def __init__(self, screen, buttonExit_old):
+    def __init__(self, screen):
         self.screen = screen
-        self.buttonExit_old = buttonExit_old
         self.gif_path = gif_button_exit_path
         self.size = (100, 100)
         self.frames = self.load_gif_frames()
         self.frame_index = 0
-        if self.buttonExit_old:
-            self.frame_index = self.buttonExit_old.frame_index
+
         self.fps = 5
         self.counter = 0
-        if self.buttonExit_old:
-            self.counter = self.buttonExit_old.counter
+
         self.pos_goal_center = (60, 650)
         self.init_pos = (-100, 650)
         self.pos_current_center = self.init_pos
-        if self.buttonExit_old:
-            self.pos_goal_center = self.buttonExit_old.init_pos
-            self.init_pos = self.buttonExit_old.pos_goal_center
-            self.pos_current_center = self.buttonExit_old.pos_current_center
+
+        self.out_screen = True
 
         self.clicked_sound_path = sound_clicked_button_path
         self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
@@ -430,19 +422,31 @@ class ButtonExit():
         self.text_exit_rect = self.text_exit.get_rect(center=self.pos_current_center)
         self.rect = self.frames[0].get_rect(center=(self.pos_current_center[0], self.pos_current_center[1]))
 
-    def effect_movement(self, index, scenes, speed=10):
-        # đổi frame dựa theo fps
+    def set_out_screen(self):
+        if self.pos_current_center[0] <= - (self.size[0] / 2):
+            self.out_screen = True
+        else:
+            self.out_screen = False
+
+    def space_action(self):
+        self.init_pos, self.pos_goal_center = self.pos_goal_center, self.init_pos
+
+    def effect_movement(self, speed=10):
         self.counter += 1
         if self.counter >= self.fps:
             self.counter = 0
             self.frame_index = (self.frame_index + 1) % len(self.frames)
 
-        if "ButtonExit" in scenes[index]["init"] and self.rect.centerx <= self.pos_goal_center[0]:
-            self.rect.centerx += speed
-        elif "ButtonExit" in scenes[index]["remove"] and self.rect.centerx >= self.pos_goal_center[0]:
-            self.rect.centerx -= speed
+        dx = round(self.pos_goal_center[0] - self.pos_current_center[0], 5)
+        d = extra_func.direction(dx)
+
+        speed = extra_func.normalize_speed(extra_func.distance(self.init_pos, self.pos_goal_center), speed)
+
+        self.rect.centerx += speed*d
 
         self.pos_current_center = self.rect.center
+
+        self.set_out_screen()
 
         rect = self.frames[self.frame_index].get_rect(center=self.rect.center)
         self.text_exit_rect = self.text_exit.get_rect(center=self.rect.center)
@@ -457,7 +461,6 @@ class ButtonExit():
         return self.rect.collidepoint(pos) or self.text_exit_rect.collidepoint(pos)
     
     def load_gif_frames(self):
-        """Trả về danh sách Surface từ một gif"""
         pil_img = Image.open(self.gif_path)
         frames = []
         try:
