@@ -1,6 +1,7 @@
 import pygame
 import cv2
 import math
+import time
 from PIL import Image
 
 pygame.mixer.init()
@@ -17,9 +18,10 @@ video_bg_rev_paths = [
     r"assets\videos\3_rev.mp4"
 ]
 
-image_button_start_paths = [r"assets\images\startButton.png", r"assets\images\aroundButtonStart.png"]
+image_button_start_paths = [r"assets\images\startButton.png", r"assets\images\aroundButton.png"]
 gif_button_exit_path = r"assets\images\buttonExit.gif"
-image_human_selector_paths = [r"assets\images\humanSelector.png", r"assets\images\clickedhumanselector.png"]
+image_human_selector_paths = [r"assets\images\humanSelector.png", r"assets\images\clickedhumanselector.png", r"assets\images\aroundButton.png"]
+image_AI_selector_paths = [r"assets\images\buttonAISelector.png", r"assets\images\clickedAISelector.png", r"assets\images\aroundButton.png"]
 
 music_bg_path = r"sounds\FrenchFuse-Space-YouTube.mp3"
 pygame.mixer.music.load(music_bg_path)
@@ -58,13 +60,14 @@ extra_func = ExtraFunc()
 scenes = [{
             "video_bg_path": video_bg_paths[0],
             "init" : {"ButtonExit" : 0, "TextContinue" : 0},
-            "remove" : {},
+            "remove" : [],
             "remain" : ["music_bg"],
             "event" : {
                 "K_SPACE" : {
                     "scene" : all_frame,
                     "music_bg" : all_frame,
-                    "ButtonExit" : all_frame
+                    "ButtonExit" : all_frame,
+                    "TextContinue" : all_frame
                 }, 
                 "MOUSE1" : {
                     "ButtonExit" : all_frame
@@ -72,8 +75,8 @@ scenes = [{
             }
         }, {
             "video_bg_path": video_bg_paths[1],
-            "init" : {"ButtonStart" : -1, "TextEsc" : 0},
-            "remove" : {"ButtonExit" : 0, "TextContinue" : 0},
+            "init" : {"ButtonStart" : -1, "TextEsc" : -1},
+            "remove" : ["ButtonExit", "TextContinue"],
             "remain" : ["music_bg"],
             "event" : {
                 "MOUSE1" : {
@@ -87,21 +90,32 @@ scenes = [{
             }
         }, {
             "video_bg_path": video_bg_paths[2],
-            "init" : {"TextContinue" : 0},
-            "remove" : {"ButtonStart" : 0},
+            "init" : {"ButtonHumanSelector" : -1, "ButtonAISelector" : -1, "TextDetailMode" : -1},
+            "remove" : ["ButtonStart"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
-                "K_SPACE" : {
-                    "scene" : -1
+                "MOUSE1" : {
+                    "scene" : -1,
+                    "ButtonHumanSelector" : -1,
+                    "ButtonAISelector" : -1,
+                    "TextDetailMode" : -1
                 },
                 "K_ESCAPE" : {
-                    "scene" : -1
+                    "scene" : -1,
+                    "ButtonHumanSelector" : -1,
+                    "ButtonAISelector" : -1,
+                    "TextDetailMode" : -1
+                },
+                "MOUSE" : {
+                    "ButtonHumanSelector" : -1,
+                    "ButtonAISelector" : -1,
+                    "TextDetailMode" : -1
                 }
             }
         }, {
             "video_bg_path": video_bg_paths[3],
             "init" : {},
-            "remove" : {"TextContinue" : 0},
+            "remove" : ["ButtonHumanSelector", "ButtonAISelector", "TextDetailMode"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "K_ESCAPE" : {
@@ -112,13 +126,14 @@ scenes = [{
 
 scenes_rev = [{
             "video_bg_rev_path": video_bg_rev_paths[0],
-            "init" : {"ButtonExit" : -1, "TextContinue" : 0},
-            "remove" : {"ButtonStart" : 0, "TextEsc" : 0},
+            "init" : {"ButtonExit" : -1, "TextContinue" : -1},
+            "remove" : ["ButtonStart", "TextEsc"],
             "remain" : ["music_bg"],
             "event" : {
                 "K_SPACE" : {
                     "scene" : -1,
-                    "ButtonExit" : -1
+                    "ButtonExit" : -1,
+                    "TextContinue" : -1,
                 },
                 "MOUSE1" : {
                     "ButtonExit" : -1
@@ -127,7 +142,7 @@ scenes_rev = [{
         }, {
             "video_bg_rev_path": video_bg_rev_paths[1],
             "init" : {"ButtonStart" : -1},
-            "remove" : {"TextContinue" : 0},
+            "remove" : ["ButtonHumanSelector", "ButtonAISelector", "TextDetailMode"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "MOUSE1" : {
@@ -141,15 +156,26 @@ scenes_rev = [{
             }
         }, {
             "video_bg_rev_path": video_bg_rev_paths[2],
-            "init" : {"TextContinue" : 0},
-            "remove" : {},
+            "init" : {"ButtonHumanSelector" : -1, "ButtonAISelector" : -1, "TextDetailMode" : -1},
+            "remove" : [],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
-                "K_SPACE" : {
-                    "scene" : -1
+                "MOUSE1" : {
+                    "scene" : -1,
+                    "ButtonHumanSelector" : -1,
+                    "ButtonAISelector" : -1,
+                    "TextDetailMode" : -1
                 },
                 "K_ESCAPE" : {
-                    "scene" : -1
+                    "scene" : -1,
+                    "ButtonHumanSelector" : -1,
+                    "ButtonAISelector" : -1,
+                    "TextDetailMode" : -1
+                },
+                "MOUSE" : {
+                    "ButtonHumanSelector" : -1,
+                    "ButtonAISelector" : -1,
+                    "TextDetailMode" : -1
                 }
             }
         }]
@@ -171,6 +197,7 @@ class Menu():
         self.width = self.height = 0
 
         self.clock = pygame.time.Clock()
+        self.fps = 30
 
         self.scenes = scenes
         self.index_scene = 0
@@ -181,13 +208,16 @@ class Menu():
         self.button_exit = ButtonExit(self.screen)
         self.text_continue = TextContinue(self.screen)
         self.text_esc = None
+        self.button_human_selector = None
+        self.button_AI_selector = None
+        self.text_detail_mode = None
 
         self.music_bg_is_running = False
 
         self.set_background(self.scenes[self.index_scene]["video_bg_path"])
 
     def handle_events(self, event):
-        if event.type == pygame.KEYDOWN:
+        if event and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE and "K_SPACE" in self.scenes[self.index_scene]["event"]:
                 k_space_event_in_scene = self.scenes[self.index_scene]["event"]["K_SPACE"]
                 if "scene" in k_space_event_in_scene and k_space_event_in_scene.get("scene") == self.index_frame_video_bg:
@@ -197,7 +227,7 @@ class Menu():
                 if "music_bg" in k_space_event_in_scene and k_space_event_in_scene.get("music_bg") == self.index_frame_video_bg and not self.music_bg_is_running:
                     pygame.mixer.music.play(-1)
                     self.music_bg_is_running = False
-                if "ButtonExit" in k_space_event_in_scene and k_space_event_in_scene.get("ButtonExit") == self.index_frame_video_bg:
+                if "ButtonExit" in k_space_event_in_scene and k_space_event_in_scene.get("ButtonExit") == self.index_frame_video_bg and self.button_exit:
                     self.button_exit.space_action()
 
 
@@ -207,26 +237,59 @@ class Menu():
                     self.scenes = scenes_rev
                     self.index_scene -= 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
-                if "ButtonStart" in k_esc_event_in_scene and k_esc_event_in_scene.get("ButtonStart") == self.index_frame_video_bg:
+                if "ButtonStart" in k_esc_event_in_scene and k_esc_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start:
                     self.button_start.escape_action()
+                if "ButtonHumanSelector" in k_esc_event_in_scene and k_esc_event_in_scene.get("ButtonHumanSelector") == self.index_frame_video_bg and self.button_human_selector:
+                    self.button_human_selector.escape_action()
+                if "ButtonAISelector" in k_esc_event_in_scene and k_esc_event_in_scene.get("ButtonAISelector") == self.index_frame_video_bg and self.button_AI_selector:
+                    self.button_AI_selector.escape_action()
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event and event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
                 mouse1_event_in_scene = self.scenes[self.index_scene]["event"]["MOUSE1"]
                 pos = pygame.mouse.get_pos()
-                if "ButtonStart" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonStart") == self.index_frame_video_bg and self.button_start.check_collided(pos):
-                    self.button_start.run_music()
-                    self.button_start.clicked()
-                
-                if "scene" in mouse1_event_in_scene and mouse1_event_in_scene.get("scene") == self.index_frame_video_bg and self.button_start.check_collided(pos):    
-                    self.scenes = scenes
-                    self.index_scene += 1
-                    self.set_background(self.scenes[self.index_scene]["video_bg_path"])
+
+                if "scene" in mouse1_event_in_scene and mouse1_event_in_scene.get("scene") == self.index_frame_video_bg:    
+                    buttons = {"ButtonStart" : self.button_start, "ButtonHumanSelector" : self.button_human_selector, "ButtonAISelector" : self.button_AI_selector}
+
+                    for name, button in buttons.items():
+                        if name in mouse1_event_in_scene and mouse1_event_in_scene.get(name) == self.index_frame_video_bg:
+                            if button and button.check_collided(pos):
+                                button.run_music()
+                                for button in buttons.values():
+                                    if button:
+                                       button.clicked()
+                                self.scenes = scenes
+                                self.index_scene += 1
+                                self.set_background(self.scenes[self.index_scene]["video_bg_path"])
+                                break              
 
                 if "ButtonExit" in mouse1_event_in_scene and mouse1_event_in_scene.get("ButtonExit") == self.index_frame_video_bg and self.button_exit.check_collided(pos):
                     self.button_exit.run_music()
                     return False
         
+        if not event:
+            if "MOUSE" in self.scenes[self.index_scene]["event"]:
+                mouse_event_in_scene = self.scenes[self.index_scene]["event"]["MOUSE"]
+                pos = pygame.mouse.get_pos()
+                if "ButtonHumanSelector" in mouse_event_in_scene and mouse_event_in_scene.get("ButtonHumanSelector") == self.index_frame_video_bg and self.button_human_selector:
+                    if self.button_human_selector.check_collided(pos):
+                        self.button_human_selector.change_image(1)
+                    else:
+                        self.button_human_selector.change_image()
+                if "ButtonAISelector" in mouse_event_in_scene and mouse_event_in_scene.get("ButtonAISelector") == self.index_frame_video_bg and self.button_AI_selector:
+                    if self.button_AI_selector.check_collided(pos):
+                        self.button_AI_selector.change_image(1)
+                    else:
+                        self.button_AI_selector.change_image()
+                if "TextDetailMode" in mouse_event_in_scene and mouse_event_in_scene.get("TextDetailMode") == self.index_frame_video_bg and self.text_detail_mode:
+                    if self.button_human_selector and self.button_human_selector.check_collided(pos):
+                        self.text_detail_mode.change_text("Chế độ người chơi")
+                    elif self.button_AI_selector and self.button_AI_selector.check_collided(pos):
+                        self.text_detail_mode.change_text("Chế độ máy chơi")
+                    else:
+                        self.text_detail_mode.change_text()
+
         return True
 
     def set_background(self, video_path):
@@ -261,25 +324,34 @@ class Menu():
             self.screen.blit(frame, (0, 0))
 
     def draw_ui(self):
-        t = pygame.time.get_ticks()
+        t = time.perf_counter()*1000
         if self.text_continue:
             self.text_continue.draw(t)
 
         if self.text_esc:
             self.text_esc.draw(t)
 
+        if self.text_detail_mode:
+            self.text_detail_mode.draw(t)
+
         if self.button_start:
             self.button_start.effect_movement()
 
         if self.button_exit:
-            self.button_exit.effect_movement()
+            self.button_exit.effect_movement(self.fps)
+
+        if self.button_human_selector:
+            self.button_human_selector.effect_movement()
+        
+        if self.button_AI_selector:
+            self.button_AI_selector.effect_movement()
 
     def run(self):
         self.draw_background()
         self.transition_object()
         self.draw_ui()
         pygame.display.flip()
-        self.clock.tick(30)
+        self.clock.tick(self.fps)
 
     def update_object(self, name, type, object):
         current_scene_config = self.scenes[self.index_scene]
@@ -287,8 +359,12 @@ class Menu():
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
                 if name == "ButtonStart":
                     object = ButtonStart(self.screen)
-                elif name == "ButtonExit":
+                if name == "ButtonExit":
                     object = ButtonExit(self.screen)
+                if name == "ButtonHumanSelector":
+                    object = ButtonHumanSelector(self.screen)
+                if name == "ButtonAISelector":
+                    object = ButtonAISelector(self.screen)
             elif name in current_scene_config["remove"] and object is not None and object.out_screen:
                 object = None
         elif type == "text":
@@ -297,7 +373,9 @@ class Menu():
                     object = TextContinue(self.screen)
                 elif name == "TextEsc":
                     object = TextEsc(self.screen)
-            elif name in current_scene_config["remove"] and self.index_frame_video_bg == current_scene_config["remove"][name] and object is not None:
+                elif name == "TextDetailMode":
+                    object = TextDetailMode(self.screen)
+            elif name in current_scene_config["remove"] and object is not None:
                 object = None
 
         return object
@@ -309,6 +387,10 @@ class Menu():
         
         self.text_continue = self.update_object("TextContinue", "text", self.text_continue)
         self.text_esc = self.update_object("TextEsc", "text", self.text_esc)
+        self.text_detail_mode = self.update_object("TextDetailMode", "text", self.text_detail_mode)
+
+        self.button_human_selector = self.update_object("ButtonHumanSelector", "button", self.button_human_selector)
+        self.button_AI_selector = self.update_object("ButtonAISelector", "button", self.button_AI_selector)
 
     def release(self):
         if self.cap is not None:
@@ -343,6 +425,9 @@ class ButtonStart():
         self.zoom_goal_rate = 1.0
         self.zoom_current_rate = self.zoom_init_rate
 
+        self.image_around_rotated = self.image_around
+        self.image_around_rotated_rect = self.image_around_rotated.get_rect()
+
         self.clicked_sound_path = sound_clicked_button_path
         self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
         self.out_screen = True
@@ -366,9 +451,9 @@ class ButtonStart():
     def run_music(self):
         self.clicked_sound.play()
 
-    def effect_movement(self, speed=10, speed_around=4, speed_zoom=0.01):
+    def effect_movement(self, speed=10, speed_angle=4, speed_zoom=0.01):
         speed = extra_func.normalize_speed(extra_func.distance(self.pos_init_center, self.pos_goal_center), speed)
-        distance_zoom = round(self.pos_goal_center[0] - self.pos_current_center[0], 5)
+        distance_zoom = round(abs(self.zoom_goal_rate - self.zoom_init_rate), 5)
         speed_zoom = extra_func.normalize_speed(distance_zoom, speed_zoom)
         
         dx = round(self.pos_goal_center[0] - self.rect_main.centerx, 5)
@@ -385,17 +470,17 @@ class ButtonStart():
 
         if self.angle >= 360:
             self.angle = 0
-        self.angle += speed_around
+        self.angle += speed_angle
 
         self.image_around = pygame.transform.scale(self.image_around_ori, (int(self.image_around_size[0]*self.zoom_current_rate), int(self.image_around_size[1]*self.zoom_current_rate)))
         self.rect_around = self.image_around.get_rect(center=self.rect_around.center)
 
         self.set_out_screen()
         
-        rotated = pygame.transform.rotate(self.image_around, self.angle)
-        rect_rotated = rotated.get_rect(center=self.rect_around.center)
+        self.image_around_rotated = pygame.transform.rotate(self.image_around, self.angle)
+        self.image_around_rotated_rect = self.image_around_rotated.get_rect(center=self.rect_around.center)
 
-        self.screen.blit(rotated, rect_rotated)
+        self.screen.blit(self.image_around_rotated, self.image_around_rotated_rect)
         self.screen.blit(self.image_main, self.rect_main)
 
 class ButtonExit():
@@ -406,7 +491,7 @@ class ButtonExit():
         self.frames = self.load_gif_frames()
         self.frame_index = 0
 
-        self.fps = 5
+        self.fps = 10
         self.counter = 0
 
         self.pos_goal_center = (60, 650)
@@ -431,9 +516,9 @@ class ButtonExit():
     def space_action(self):
         self.init_pos, self.pos_goal_center = self.pos_goal_center, self.init_pos
 
-    def effect_movement(self, speed=10):
+    def effect_movement(self, fps, speed=10):
         self.counter += 1
-        if self.counter >= self.fps:
+        if self.counter >= round(fps / self.fps):
             self.counter = 0
             self.frame_index = (self.frame_index + 1) % len(self.frames)
 
@@ -507,54 +592,209 @@ class TextEsc():
 class TextDetailMode():
     def __init__(self, screen):
         self.screen = screen
-        self.font = pygame.font.SysFont("Arial", 20, bold=True)
-        self.text = "CHỌN CHẾ ĐỘ"
+        self.font = pygame.font.SysFont("Arial", 20)
+        self.text_ori = "Chọn chế độ"
+        self.text = self.text_ori
         self.color = (255, 255, 255)
         self.image = self.font.render(self.text, True, self.color)
-        self.pos_center = (1180, 20)
+        self.pos_center = (650, 690)
         self.rect = self.image.get_rect(center=self.pos_center)
 
-    def draw(self):
-        pass
+    def change_text(self, text=None):
+        if text:
+            self.text = text
+        else:
+            self.text = self.text_ori
+        self.image = self.font.render(self.text, True, self.color)
+        self.rect = self.image.get_rect(center=self.pos_center)
 
-class ButtonhumanSelector():
-    def __init__(self, screen, humanSelector_old):
+    def draw(self, t, speed_time=500):
+        if (t // speed_time) % 2 == 0:    
+            self.screen.blit(self.image, self.rect)
+
+class ButtonHumanSelector():
+    def __init__(self, screen):
         self.screen = screen
-        self.humanSelector = humanSelector_old
         
-        self.image_changing = False
-        if humanSelector_old:
-            self.image_changing = True
+        self.index = 0
         
-        self.image_ori = pygame.image.load(image_human_selector_paths[int(self.image_changing)]).convert_alpha()
-        self.image_size = (120, 120)
-        self.image = pygame.transform.scale(self.image_ori, self.image_size)
-        self.rect = self.image.get_rect()
+        self.image_main_ori = pygame.image.load(image_human_selector_paths[self.index]).convert_alpha()
+        self.image_main_size = (80, 80)
+        self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
+        self.rect_main = self.image_main.get_rect()
 
-        self.pos_init_center = ()
-        self.pos_goal_center = ()
-        self.pos_curren_center = self.pos_init_center
+        self.image_around_ori = pygame.image.load(image_human_selector_paths[2]).convert_alpha()
+        self.image_around_size = (150, 150)
+        self.image_around = pygame.transform.scale(self.image_around_ori, self.image_around_size)
+        self.rect_around = self.image_around.get_rect()
 
-        if humanSelector_old:
-            self.pos_init_center = self.humanSelector.pos_goal_center
-            self.pos_goal_center = self.humanSelector.pos_init_center
-            self.pos_curren_center = self.humanSelector.pos_current_center
-        self.rect.center = self.pos_curren_center
+        self.pos_init_center = (720, -80)
+        self.pos_goal_center = (720, 120)
+        self.pos_current_center = self.pos_init_center
+        self.rect_main.center = self.pos_current_center
+        self.rect_around.center = self.rect_main.center
+
+        self.zoom_init_rate = 0.8
+        self.zoom_goal_rate = 1.0
+        self.zoom_current_rate = self.zoom_init_rate
+
+        self.image_around_rotated = self.image_around
+        self.image_around_rotated_rect = self.image_around_rotated.get_rect()
+
+        self.angle = 0
 
         self.clicked_sound_path = sound_clicked_button_path
         self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
 
-    def change_image(self):
-        self.image_changing = not self.image_changing
-        self.image_ori = pygame.image.load(image_human_selector_paths[int(self.image_changing)]).convert_alpha()
-        self.image = pygame.transform.scale(self.image_ori, self.image_size)
-        self.rect = self.image.get_rect()
+        self.out_screen = True
+
+    def escape_action(self):
+        self.clicked()
+
+    def set_out_screen(self):
+        if self.pos_current_center[1] <= -(self.image_around_size[1] / 2):
+            self.out_screen = True
+        else:
+            self.out_screen = False
+
+    def clicked(self):
+        self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
+        self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
+
+    def change_image(self, index=0):
+        self.index = index
+        self.image_main_ori = pygame.image.load(image_human_selector_paths[self.index]).convert_alpha()
+        self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
+        self.rect_main = self.image_main.get_rect(center=self.rect_main.center)
 
     def check_collided(self, pos):
-        self.rect.collidepoint(pos)
+        return self.rect_main.collidepoint(pos)
 
     def run_music(self):
         self.clicked_sound.play()
 
-    def effect_movement(self):
-        pass
+    def effect_movement(self, speed=10, speed_angle=4, speed_zoom=0.01):
+        speed = extra_func.normalize_speed(extra_func.distance(self.pos_init_center, self.pos_goal_center), speed)
+        distance_zoom = round(abs(self.zoom_goal_rate - self.zoom_init_rate), 5)
+        speed_zoom = extra_func.normalize_speed(distance_zoom, speed_zoom)
+
+        dx = round(self.pos_goal_center[1] - self.rect_main.centery, 5)
+        d = extra_func.direction(dx)
+        self.rect_main.centery += speed*d
+        self.rect_around.centery = self.rect_main.centery
+
+        self.pos_current_center = self.rect_main.center
+
+        dz = round(self.zoom_goal_rate - self.zoom_current_rate, 5)
+        d = extra_func.direction(dz)
+        self.zoom_current_rate += speed_zoom*d
+
+
+        if self.angle >= 360:
+            self.angle = 0
+        self.angle += speed_angle
+
+        self.image_around = pygame.transform.scale(self.image_around_ori, (int(self.image_around_size[0]*self.zoom_current_rate), int(self.image_around_size[1]*self.zoom_current_rate)))
+        self.rect_around = self.image_around.get_rect(center=self.rect_around.center)
+
+        self.set_out_screen()
+        
+        self.image_around_rotated = pygame.transform.rotate(self.image_around, self.angle)
+        self.image_around_rotated_rect = self.image_around_rotated.get_rect(center=self.rect_around.center)
+
+        self.screen.blit(self.image_around_rotated, self.image_around_rotated_rect)
+        self.screen.blit(self.image_main, self.rect_main)
+
+class ButtonAISelector():
+    def __init__(self, screen):
+        self.screen = screen
+        
+        self.index = 0
+        
+        self.image_main_ori = pygame.image.load(image_AI_selector_paths[self.index]).convert_alpha()
+        self.image_main_size = (80, 80)
+        self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
+        self.rect_main = self.image_main.get_rect()
+
+        self.image_around_ori = pygame.image.load(image_AI_selector_paths[2]).convert_alpha()
+        self.image_around_size = (150, 150)
+        self.image_around = pygame.transform.scale(self.image_around_ori, self.image_around_size)
+        self.rect_around = self.image_around.get_rect()
+
+        self.pos_init_center = (1150, 800)
+        self.pos_goal_center = (1150, 600)
+        self.pos_current_center = self.pos_init_center
+        self.rect_main.center = self.pos_current_center
+        self.rect_around.center = self.rect_main.center
+
+        self.zoom_init_rate = 0.8
+        self.zoom_goal_rate = 1.0
+        self.zoom_current_rate = self.zoom_init_rate
+
+        self.image_around_rotated = self.image_around
+        self.image_around_rotated_rect = self.image_around_rotated.get_rect()
+
+        self.angle = 0
+
+        self.clicked_sound_path = sound_clicked_button_path
+        self.clicked_sound = pygame.mixer.Sound(self.clicked_sound_path)
+
+        self.out_screen = True
+
+    def escape_action(self):
+        self.clicked()
+
+    def set_out_screen(self):
+        sizey = round(self.screen.get_size()[1] + (self.image_around_size[1] / 2))
+        if self.pos_current_center[1] >= sizey:
+            self.out_screen = True
+        else:
+            self.out_screen = False
+
+    def clicked(self):
+        self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
+        self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
+
+    def change_image(self, index=0):
+        self.index = index
+        self.image_main_ori = pygame.image.load(image_AI_selector_paths[self.index]).convert_alpha()
+        self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
+        self.rect_main = self.image_main.get_rect(center=self.rect_main.center)
+
+    def check_collided(self, pos):
+        return self.rect_main.collidepoint(pos)
+
+    def run_music(self):
+        self.clicked_sound.play()
+
+    def effect_movement(self, speed=10, speed_angle=4, speed_zoom=0.01):
+        speed = extra_func.normalize_speed(extra_func.distance(self.pos_init_center, self.pos_goal_center), speed)
+        distance_zoom = round(abs(self.zoom_goal_rate - self.zoom_init_rate), 5)
+        speed_zoom = extra_func.normalize_speed(distance_zoom, speed_zoom)
+
+        dx = round(self.pos_goal_center[1] - self.rect_main.centery, 5)
+        d = extra_func.direction(dx)
+        self.rect_main.centery += speed*d
+        self.rect_around.centery = self.rect_main.centery
+
+        self.pos_current_center = self.rect_main.center
+
+        dz = round(self.zoom_goal_rate - self.zoom_current_rate, 5)
+        d = extra_func.direction(dz)
+        self.zoom_current_rate += speed_zoom*d
+
+
+        if self.angle >= 360:
+            self.angle = 0
+        self.angle += speed_angle
+
+        self.image_around = pygame.transform.scale(self.image_around_ori, (int(self.image_around_size[0]*self.zoom_current_rate), int(self.image_around_size[1]*self.zoom_current_rate)))
+        self.rect_around = self.image_around.get_rect(center=self.rect_around.center)
+
+        self.set_out_screen()
+        
+        self.image_around_rotated = pygame.transform.rotate(self.image_around, self.angle)
+        self.image_around_rotated_rect = self.image_around_rotated.get_rect(center=self.rect_around.center)
+
+        self.screen.blit(self.image_around_rotated, self.image_around_rotated_rect)
+        self.screen.blit(self.image_main, self.rect_main)
