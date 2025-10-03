@@ -142,25 +142,31 @@ scenes = [{
             }
         }, {
             "video_bg_path": video_bg_paths[4],
-            "init" : {},
+            "init" : {"TextPlay" : 0},
             "remove" : ["ButtonLevel1", "TextDetailLevel"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "end_frame" : {
                     "scene" : -1
+                },
+                "ENTER" : {
+                    "play" : all_frame
                 }
             }
         }, {
             "video_bg_path": video_bg_paths[5],
             "init" : {},
             "remove" : [],
-            "remain" : ["TextEsc", "music_bg"],
+            "remain" : ["TextEsc", "music_bg", "TextPlay"],
             "event" : {
                 "K_ESCAPE" : {
                     "scene" : all_frame
                 },
                 "end_frame" : {
                     "loop" : -1
+                },
+                "ENTER" : {
+                    "play" : all_frame
                 }
             }
         }
@@ -226,7 +232,7 @@ scenes_rev = [{
         }, {
             "video_bg_rev_path": video_bg_rev_paths[3],
             "init" : {"ButtonLevel1" : -1, "TextDetailLevel" : -1},
-            "remove" : [],
+            "remove" : ["TextPlay"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "K_ESCAPE" : {
@@ -271,14 +277,15 @@ class Menu():
         self.index_frame_video_bg = None
 
         self.button_start = None
-        self.button_exit = ButtonExit(self.screen)
-        self.text_continue = TextContinue(self.screen)
+        self.button_exit = ButtonExit(self.window)
+        self.text_continue = TextContinue(self.window)
         self.text_esc = None
         self.button_human_selector = None
         self.button_AI_selector = None
         self.text_detail_mode = None
         self.button_level_1 = None
         self.text_detail_level = None
+        self.text_play = None
 
         self.music_bg_is_running = False
 
@@ -316,6 +323,11 @@ class Menu():
                 for name, button in buttons.items():
                     if name in k_esc_event_in_scene and k_esc_event_in_scene.get(name) == self.index_frame_video_bg and button:
                         button.escape_action()
+
+            if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER) and "ENTER" in self.scenes[self.index_scene]["event"]:
+                enter_event_in_scene = self.scenes[self.index_scene]["event"]["ENTER"]
+                if "play" in enter_event_in_scene and enter_event_in_scene.get("play") == self.index_frame_video_bg:
+                    self.window.set_data("status_screen", "game_play")
 
         if event and event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
@@ -433,7 +445,13 @@ class Menu():
     def draw_ui(self):
         t = time.perf_counter()*1000
 
-        text_list = [self.text_continue, self.text_esc, self.text_detail_mode, self.text_detail_level]
+        text_list = [
+            self.text_continue, 
+            self.text_esc, 
+            self.text_detail_mode, 
+            self.text_detail_level, 
+            self.text_play
+        ]
         for text in text_list:
             if text:
                 text.draw(t)
@@ -463,27 +481,29 @@ class Menu():
         if type == "button":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
                 if name == "ButtonStart":
-                    object = ButtonStart(self.screen)
+                    object = ButtonStart(self.window)
                 elif name == "ButtonExit":
-                    object = ButtonExit(self.screen)
+                    object = ButtonExit(self.window)
                 elif name == "ButtonHumanSelector":
-                    object = ButtonHumanSelector(self.screen)
+                    object = ButtonHumanSelector(self.window)
                 elif name == "ButtonAISelector":
-                    object = ButtonAISelector(self.screen)
+                    object = ButtonAISelector(self.window)
                 elif name == "ButtonLevel1":
-                    object = ButtonLevel(self.screen, 1, 80)
+                    object = ButtonLevel(self.window, 1, 80)
             elif name in current_scene_config["remove"] and object is not None and object.out_screen:
                 object = None
         elif type == "text":
             if name in current_scene_config["init"] and self.index_frame_video_bg == current_scene_config["init"][name] and object is None:
                 if name == "TextContinue":
-                    object = TextContinue(self.screen)
+                    object = TextContinue(self.window)
                 elif name == "TextEsc":
-                    object = TextEsc(self.screen)
+                    object = TextEsc(self.window)
                 elif name == "TextDetailMode":
-                    object = TextDetailMode(self.screen)
+                    object = TextDetailMode(self.window)
                 elif name == "TextDetailLevel":
-                    object = TextDetailLevel(self.screen)
+                    object = TextDetailLevel(self.window)
+                elif name == "TextPlay":
+                    object = TextPlay(self.window)
                 
             elif name in current_scene_config["remove"] and object is not None:
                 object = None
@@ -499,6 +519,7 @@ class Menu():
         self.text_esc = self.update_object("TextEsc", "text", self.text_esc)
         self.text_detail_mode = self.update_object("TextDetailMode", "text", self.text_detail_mode)
         self.text_detail_level = self.update_object("TextDetailLevel", "text", self.text_detail_level)
+        self.text_play = self.update_object("TextPlay", "text", self.text_play)
 
         self.button_human_selector = self.update_object("ButtonHumanSelector", "button", self.button_human_selector)
         self.button_AI_selector = self.update_object("ButtonAISelector", "button", self.button_AI_selector)
@@ -510,8 +531,9 @@ class Menu():
             self.cap.release()
 
 class ButtonStart():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         self.image_main_ori = pygame.image.load(image_button_start_paths[0]).convert_alpha()
         self.image_main_size = (120, 120)
         self.image_main = pygame.transform.scale(self.image_main_ori, self.image_main_size)
@@ -597,8 +619,9 @@ class ButtonStart():
         self.screen.blit(self.image_main, self.rect_main)
 
 class ButtonExit():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         self.gif_path = gif_button_exit_path
         self.size = (100, 100)
         self.frames = self.load_gif_frames()
@@ -681,8 +704,9 @@ class ButtonExit():
         return frames
 
 class TextContinue():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         self.font = pygame.font.SysFont("Arial", 18)
         self.text = "Nhấn SPACE để tiếp tục..."
         self.color = (255, 255, 255)
@@ -695,8 +719,9 @@ class TextContinue():
             self.screen.blit(self.image, self.rect)
 
 class TextEsc():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         self.font = pygame.font.SysFont("Arial", 18)
         self.text = "Nhấn ESC để quay lại..."
         self.color = (255, 255, 255)
@@ -709,8 +734,9 @@ class TextEsc():
             self.screen.blit(self.image, self.rect)
 
 class TextDetailMode():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         self.font = pygame.font.SysFont("Arial", 18)
         self.text_ori = "Chọn chế độ"
         self.text = self.text_ori
@@ -732,8 +758,9 @@ class TextDetailMode():
             self.screen.blit(self.image, self.rect)
 
 class ButtonHumanSelector():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         
         self.index = 0
         
@@ -779,6 +806,10 @@ class ButtonHumanSelector():
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
         self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
+        self.set_data()
+
+    def set_data(self):
+        self.window.set_data("mode", "human")
 
     def change_image(self, index=0):
         self.index = index
@@ -825,8 +856,9 @@ class ButtonHumanSelector():
         self.screen.blit(self.image_main, self.rect_main)
 
 class ButtonAISelector():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         
         self.index = 0
         
@@ -873,6 +905,10 @@ class ButtonAISelector():
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
         self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
+        self.set_data()
+
+    def set_data(self):
+        self.window.set_data("mode", "AI")
 
     def change_image(self, index=0):
         self.index = index
@@ -919,8 +955,9 @@ class ButtonAISelector():
         self.screen.blit(self.image_main, self.rect_main)
 
 class ButtonLevel():
-    def __init__(self, screen, level, centerx):
-        self.screen = screen
+    def __init__(self, window, level, centerx):
+        self.window = window
+        self.screen = self.window.screen
         self.level = level
         self.centerx = centerx
 
@@ -979,6 +1016,10 @@ class ButtonLevel():
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
         self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
+        self.set_data()
+
+    def set_data(self):
+        self.window.set_data("level", self.level)
 
     def check_collided(self, pos):
         return self.rect_main.collidepoint(pos)
@@ -1022,8 +1063,9 @@ class ButtonLevel():
         self.screen.blit(self.image_text, self.text_rect)
 
 class TextDetailLevel():
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
         self.font = pygame.font.SysFont("Arial", 18)
         self.text_ori = "Chọn cấp độ chơi"
         self.text = self.text_ori
@@ -1038,6 +1080,22 @@ class TextDetailLevel():
         else:
             self.text = self.text_ori
         self.image = self.font.render(self.text, True, self.color)
+        self.rect = self.image.get_rect(center=self.pos_center)
+
+    def draw(self, t, speed_time=500):
+        if (t // speed_time) % 2 == 0:    
+            self.screen.blit(self.image, self.rect)
+
+class TextPlay():
+    def __init__(self, window):
+        self.window = window
+        self.screen = self.window.screen
+        self.font = pygame.font.SysFont("Arial", 18)
+        self.text_ori = "Nhấn Enter để chơi"
+        self.text = self.text_ori
+        self.color = (255, 255, 255)
+        self.image = self.font.render(self.text, True, self.color)
+        self.pos_center = (650, 690)
         self.rect = self.image.get_rect(center=self.pos_center)
 
     def draw(self, t, speed_time=500):
