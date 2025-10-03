@@ -20,7 +20,7 @@ class Window():
         self.icon = pygame.transform.scale(self.icon_ori, (32, 32))
         pygame.display.set_icon(self.icon)
 
-        self.data = {}
+        self.data = {"status_screen" : "menu"}
 
     def set_data(self, name, value):
         self.data[name] = value
