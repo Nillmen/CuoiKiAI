@@ -128,7 +128,8 @@ scenes = [{
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "K_ESCAPE" : {
-                    "scene" : -1
+                    "scene" : -1,
+                    "ButtonLevel1" : -1
                 },
                 "MOUSE" : {
                     "ButtonLevel1" : -1,
@@ -143,8 +144,8 @@ scenes = [{
         }, {
             "video_bg_path": video_bg_paths[4],
             "init" : {"TextPlay" : 0},
-            "remove" : ["ButtonLevel1", "TextDetailLevel"],
-            "remain" : ["TextEsc", "music_bg"],
+            "remove" : ["ButtonLevel1", "TextDetailLevel", "TextEsc"],
+            "remain" : ["music_bg"],
             "event" : {
                 "end_frame" : {
                     "scene" : -1
@@ -155,9 +156,9 @@ scenes = [{
             }
         }, {
             "video_bg_path": video_bg_paths[5],
-            "init" : {},
+            "init" : {"TextEsc" : 0},
             "remove" : [],
-            "remain" : ["TextEsc", "music_bg", "TextPlay"],
+            "remain" : ["music_bg", "TextPlay"],
             "event" : {
                 "K_ESCAPE" : {
                     "scene" : all_frame
