@@ -1,32 +1,34 @@
-import os
 import pygame
 from scripts.menu import Menu
+from scripts.gameplay import Gameplay
+from scripts.window import Window
+
+pygame.init()
 
 def start():
-    os.environ['SDL_VIDEO_CENTERED'] = '1' 
-    pygame.init()
-
-    info = pygame.display.Info()
-    screen_w, screen_h = info.current_w, info.current_h
-    screen = pygame.display.set_mode((screen_w, screen_h))
-
-    caption = "Sokoban Game"
-    pygame.display.set_caption(caption)
     
-    icon = pygame.image.load(r"gameSokoban\assets\images\icon.png").convert_alpha()
-    icon = pygame.transform.scale(icon, (32, 32))
-    pygame.display.set_icon(icon)
+    window = Window()
 
-    menu = Menu(screen)
+    menu = Menu(window)
+    game_play = Gameplay(window)
+
+    screens = {
+        "menu" : menu,
+        "game_play" : game_play
+    }
 
     running = True
     while running:
+        screen = screens[window.get_data("status_screen")]
+        
+        running = screen.handle_events(None)
+
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or not menu.handle_events(event):
+            if event.type == pygame.QUIT or not screen.handle_events(event):
                 running = False
 
         if running:    
-            menu.run()
+            screen.run()
 
-    menu.release()
+    screen.release()
     pygame.quit()
