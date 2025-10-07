@@ -20,7 +20,7 @@ class Window():
         self.icon = pygame.transform.scale(self.icon_ori, (32, 32))
         pygame.display.set_icon(self.icon)
 
-        self.data = {
+        self.data_ori = {
             "status_screen" : "menu",
             "menu_back" : False,
             "map_ori_list" : [
@@ -60,8 +60,14 @@ class Window():
             "map_current" : [],
             "level" : 0,
             "pos_history_list" : [],
-            "pos_endpoints" : []
+            "pos_endpoints" : [],
+            "pos_state" : {},
+            "fps" : 30
         }
+        self.data = self.data_ori.copy()
+
+    def reset_data(self):
+        self.data = self.data_ori.copy()
 
     def set_data(self, name, value):
         self.data[name] = value

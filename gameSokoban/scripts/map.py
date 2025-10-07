@@ -13,12 +13,15 @@ class Map():
         self.mode = self.window.get_data("mode")
         self.level = self.window.get_data("level")
         self.map_ori = self.window.get_data("map_ori_list")[self.level]
+        self.pos_history_list = self.window.get_data("pos_history_list").copy()
+        print(self.pos_history_list)
         self.map_ori = [list(row) for row in self.map_ori]
-        self.map_current = self.map_ori
-        self.window.set_data("map_current", self.map_current)
-        self.pos_history_list = []
-        self.state = None
-        self.pos_endpoints = []
+        self.map_current = self.window.get_data("map_current")
+        if len(self.map_current) == 0:
+            self.map_current = self.map_ori.copy()
+            self.window.set_data("map_current", self.map_current)
+        self.state = self.window.get_data("pos_state").copy()
+        self.pos_endpoints = self.window.get_data("pos_endpoints").copy()
 
         self.row_quantity = len(self.map_current)
         self.col_quantity = len(self.map_current[0])
@@ -36,7 +39,6 @@ class Map():
 
 
     def create_map(self):
-        print("đã tạo")
         self.objects = []
         pos_endpoints = []
         pos_boxes = []
@@ -88,16 +90,13 @@ class Map():
                     self.objects.extend([g, p])
 
         if len(self.pos_endpoints) == 0:
-            print("đã endpoints")
-            self.pos_endpoints = pos_endpoints
-            print(self.pos_endpoints)
+            self.pos_endpoints = pos_endpoints.copy()
             self.window.set_data("pos_endpoints", self.pos_endpoints)
-            print(self.window.get_data("pos_endpoints"))
 
-        if self.state is None:
+        if len(self.state) == 0:
             self.state = {
                 "pos_character" : pos_character,
-                "pos_boxes" : pos_boxes
+                "pos_boxes" : pos_boxes.copy()
             }
             self.window.set_data("pos_state", self.state)
 
