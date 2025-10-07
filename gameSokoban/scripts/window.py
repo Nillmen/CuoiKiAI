@@ -20,7 +20,48 @@ class Window():
         self.icon = pygame.transform.scale(self.icon_ori, (32, 32))
         pygame.display.set_icon(self.icon)
 
-        self.data = {"status_screen" : "menu"}
+        self.data = {
+            "status_screen" : "menu",
+            "menu_back" : False,
+            "map_ori_list" : [
+                [],
+                [  # Level 1
+                "ewwwww",
+                "wwcppw",
+                "wgbbww",
+                "wgggwe",
+                "wgggwe",
+                "wwwwwe"
+                ],
+                [  # Level 2
+                "wwwwwww",
+                "wppbppw",
+                "wppwppw",
+                "wgbbbgw",
+                "wggbggw",
+                "wgbbbcw",
+                "wgggggw",
+                "wwwwwww"
+                ],
+                [  # Level 3
+                "eeeewwwwweeeeeeeeew",
+                "eeeewgggweeeeeeeeee",
+                "eeeewbggweeeeeeeeee",
+                "eewwwggbwweeeeeeeee",
+                "eewggbgbgweeeeeeeee",
+                "wwwgwgwwgweeewwwwww",
+                "wgggwgwwgwwwwwggppw",
+                "wgbggbggggggggggppw",
+                "wwwwwgwwwgwcwwggppw",
+                "eeeewgggggwwwwwwwww",
+                "eeeewwwwwwweeeeeeee"
+                ]
+            ],
+            "map_current" : [],
+            "level" : 0,
+            "pos_history_list" : [],
+            "pos_endpoints" : []
+        }
 
     def set_data(self, name, value):
         self.data[name] = value

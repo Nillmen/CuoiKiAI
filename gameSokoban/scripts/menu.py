@@ -42,7 +42,8 @@ class ExtraFunc():
     def __init__(self):
         pass
     def normalize_speed(self, d, s):
-
+        if d <= s:
+            return d
         frac, interger = math.modf(round(d / s, 5))
         if frac >= 0.5:
             s = d / (interger + 1)
@@ -271,6 +272,7 @@ class Menu():
 
         self.clock = pygame.time.Clock()
         self.fps = 30
+        self.window.set_data("fps", 30)
 
         self.scenes = scenes
         self.index_scene = 0
@@ -289,8 +291,19 @@ class Menu():
         self.text_play = None
 
         self.music_bg_is_running = False
-
-        self.set_background(self.scenes[self.index_scene]["video_bg_path"])
+        self.is_back = self.window.get_data("menu_back")
+        if self.is_back:
+            self.button_exit = None
+            self.text_continue = None
+            self.scenes = scenes_rev
+            self.index_scene = 3
+            pygame.mixer.music.play(-1)
+            self.music_bg_is_running = True
+            self.is_back = False
+            self.window.set_data("menu_back", False)
+            self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
+        else:
+            self.set_background(self.scenes[self.index_scene]["video_bg_path"])
 
     def handle_events(self, event):
         if event and event.type == pygame.KEYDOWN:
@@ -328,7 +341,9 @@ class Menu():
             if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER) and "ENTER" in self.scenes[self.index_scene]["event"]:
                 enter_event_in_scene = self.scenes[self.index_scene]["event"]["ENTER"]
                 if "play" in enter_event_in_scene and enter_event_in_scene.get("play") == self.index_frame_video_bg:
-                    self.window.set_data("status_screen", "game_play")
+                    self.window.set_data("status_screen", "gameplay")
+                    pygame.mixer.music.fadeout(2000)
+                    self.music_bg_is_running = False
 
         if event and event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1 and "MOUSE1" in self.scenes[self.index_scene]["event"]:
@@ -351,6 +366,8 @@ class Menu():
                                 for button in buttons.values():
                                     if button:
                                        button.clicked()
+                                       if button.check_collided(pos) and (name == "ButtonHumanSelector" or name == "ButtonAISelector"):
+                                           button.set_data()
                                 self.scenes = scenes
                                 self.index_scene += 1
                                 self.set_background(self.scenes[self.index_scene]["video_bg_path"])
@@ -424,6 +441,8 @@ class Menu():
             self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
             self.screen = pygame.display.set_mode((self.width, self.height))
+        
+        self.window.set_data("screen_size", (self.width, self.height))
 
     def draw_background(self):
 
@@ -807,7 +826,6 @@ class ButtonHumanSelector():
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
         self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
-        self.set_data()
 
     def set_data(self):
         self.window.set_data("mode", "human")
@@ -906,7 +924,6 @@ class ButtonAISelector():
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
         self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
-        self.set_data()
 
     def set_data(self):
         self.window.set_data("mode", "AI")
