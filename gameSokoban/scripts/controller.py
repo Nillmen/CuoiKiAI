@@ -3,9 +3,9 @@ import pygame
 class Controller():
     def __init__(self, window):
         self.window = window
-        self.map_current = self.window.get_data("map_current")
-        self.pos_history_list = []
-        self.state = self.window.get_data("pos_state")
+        self.map_current = self.window.get_data("map_current").copy()
+        self.pos_history_list = self.window.get_data("pos_history_list").copy()
+        self.state = self.window.get_data("pos_state").copy()
         self.pos_character = self.state["pos_character"]
         self.pos_boxes = self.state["pos_boxes"].copy()
 

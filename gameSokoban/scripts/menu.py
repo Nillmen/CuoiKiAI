@@ -271,7 +271,7 @@ class Menu():
         self.width = self.height = 0
 
         self.clock = pygame.time.Clock()
-        self.fps = 30
+        self.fps = self.window.get_data("fps")
         self.window.set_data("fps", 30)
 
         self.scenes = scenes
@@ -293,17 +293,22 @@ class Menu():
         self.music_bg_is_running = False
         self.is_back = self.window.get_data("menu_back")
         if self.is_back:
+            self.text_play = TextPlay(self.window)
+            self.text_play.change_text()
+            self.text_esc = TextEsc(self.window)
+            self.index_scene = 5
+            self.button_start = None
+            self.button_human_selector = None
+            self.button_AI_selector = None
+            self.text_detail_mode = None
+            self.button_level_1 = None
+            self.text_detail_level = None
             self.button_exit = None
             self.text_continue = None
-            self.scenes = scenes_rev
-            self.index_scene = 3
             pygame.mixer.music.play(-1)
             self.music_bg_is_running = True
-            self.is_back = False
-            self.window.set_data("menu_back", False)
-            self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
-        else:
-            self.set_background(self.scenes[self.index_scene]["video_bg_path"])
+
+        self.set_background(self.scenes[self.index_scene]["video_bg_path"])
 
     def handle_events(self, event):
         if event and event.type == pygame.KEYDOWN:
@@ -328,6 +333,9 @@ class Menu():
                     while self.index_scene > len(self.scenes) - 1:
                         self.index_scene -= 1
                     self.set_background(self.scenes[self.index_scene]["video_bg_rev_path"])
+                    if self.index_scene == len(self.scenes) - 1 and self.is_back == True:
+                        self.is_back = False
+                        self.window.reset_data()
                 buttons = {
                     "ButtonStart" : self.button_start,
                     "ButtonHumanSelector" : self.button_human_selector,
@@ -928,6 +936,7 @@ class ButtonAISelector():
     def set_data(self):
         self.window.set_data("mode", "AI")
 
+
     def change_image(self, index=0):
         self.index = index
         self.image_main_ori = pygame.image.load(image_AI_selector_paths[self.index]).convert_alpha()
@@ -1114,6 +1123,14 @@ class TextPlay():
         self.color = (255, 255, 255)
         self.image = self.font.render(self.text, True, self.color)
         self.pos_center = (650, 690)
+        self.rect = self.image.get_rect(center=self.pos_center)
+
+    def change_text(self, text=None):
+        if text:
+            self.text = text
+        else:
+            self.text = "Nhấn Enter để chơi tiếp"
+        self.image = self.font.render(self.text, True, self.color)
         self.rect = self.image.get_rect(center=self.pos_center)
 
     def draw(self, t, speed_time=500):
