@@ -73,7 +73,12 @@ class Window():
         self.data = self.data_ori.copy()
 
     def reset_data(self):
+        mode = self.data["mode"]
+        level = self.data["level"]
         self.data = self.data_ori.copy()
+        self.data["mode"] = mode
+        self.data["level"] = level
+        print(self.data)
 
     def set_data(self, name, value):
         self.data[name] = value
