@@ -62,7 +62,13 @@ class Window():
             "pos_history_list" : [],
             "pos_endpoints" : [],
             "pos_state" : {},
-            "fps" : 30
+            "limit_condition_algorithm" : {
+                "max_time" : 10,
+                "max_step" : 1000000
+            },
+            "algorithm_time_run_each_step" : 1,
+            "fps" : 30,
+            "algorithm" : ""
         }
         self.data = self.data_ori.copy()
 

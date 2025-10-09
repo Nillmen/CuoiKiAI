@@ -19,7 +19,7 @@ def start():
 
         elif name == "gameplay" and not isinstance(screen, Gameplay):
             screen = Gameplay(window)
-        
+
         running = screen.handle_events(None)
 
         for event in pygame.event.get():

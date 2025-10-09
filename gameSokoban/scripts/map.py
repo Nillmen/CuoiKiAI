@@ -45,6 +45,7 @@ class Map():
         pos_character = None
 
         self.map_current = self.window.get_data("map_current")
+        print(self.map_current)
 
         for row_index, row in enumerate(self.map_current):
             for col_index, cell in enumerate(row):
