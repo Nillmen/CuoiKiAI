@@ -1,64 +1,44 @@
 import pygame
-from scripts import controller, map
-from scripts import aiAlgorithms
-from scripts.objects import box,character,wall,endpoint,ground
+from scripts.map import Map
+from scripts.controller import Controller
 
 class Gameplay():
     def __init__(self, window):
         self.window = window
         self.screen = self.window.screen
-        self.level = self.window.get_data("level")
         self.mode = self.window.get_data("mode")
-        self.map= map.Map(self.window)
-        self.algorithm="BFS"
-        self.window.set_data("algorithm", self.algorithm)
-
-        self.character=self.map.character
-        self.boxes = self.map.boxes
-        self.controller=None
-        
-        self.aIAlgorithm = aiAlgorithms.Algorithm(self.window)
-
-        self.mode_choosing()
-        self.map.createMap()
-
-        
-        
+        self.level = self.window.get_data("level")
+        self.map = Map(self.window)
+        print("mapbe", self.window.get_data("map_current"))
+        self.map.create_map()
+        print("mapaf", self.window.get_data("map_current"))
+        self.controller = Controller(self.window)
+        self.clock = pygame.time.Clock()
+        self.fps = self.window.get_data("fps")
 
     def handle_events(self, event):
+        if self.mode == "human":
+            if event and event.type == pygame.KEYDOWN:
+                print("-3", self.window.get_data("map_current"))
+                print("đã chạy key down")
+                self.controller.handle_human_action(event.key)
+                self.map.create_map()
+        if self.mode == "AI":
+            if not event:
+                if self.controller.handle_AI_action():
+                    self.map.create_map()
+                #pass
 
+        if event and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.window.set_data("status_screen", "menu")
+                self.window.set_data("menu_back", True)
         return True
+    
+    def run(self):
+        self.map.draw_map()
+        pygame.display.flip()
+        self.clock.tick(self.fps)
+
     def release(self):
         pass
-    def run(self):
-        self.map.createMap()
-        self.map.drawMap()
-        
-        pygame.display.flip()
-
-    def mode_choosing(self):
-        if self.mode =="human":
-            self.controller=controller.Controller(self.character,self.boxes)
-        if self.mode =="AI":
-            self.ai_illustrate()
-    def ai_illustrate(self):
-        cellList,moveList = self.aIAlgorithm.get_solution()
-
-        move = moveList[-1]
-        self.character.move(move[0], move[1],self.map.walls,self.map.boxes)
-
-
-
-    
-
-    
- 
-
-
-        
-
-
-
-        
-
-        

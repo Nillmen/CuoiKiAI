@@ -7,7 +7,7 @@ class Box(pygame.sprite.Sprite):
         self.image_path = r"assets\images\box.png"
         self.image = pygame.image.load(self.image_path)
         self.image = pygame.transform.scale(self.image, (tile_size, tile_size))
-        self.rect = self.image.get_rect(topleft=(x * tile_size, y * tile_size))
+        self.rect = self.image.get_rect(topleft=(x, y))
         self.tile_size = tile_size
 
     def move(self, dx, dy, walls, boxes):

@@ -1,114 +1,106 @@
 import pygame
-import os
-from scripts import window
-from scripts.objects import box,character,wall,endpoint,ground
+from scripts.objects.character import Character
+from scripts.objects.box import Box
+from scripts.objects.endpoint import Endpoint
+from scripts.objects.ground import Ground
+from scripts.objects.wall import Wall
 
 class Map():
     def __init__(self, window):
         self.window = window
         self.screen = self.window.screen
-        self.level=self.window.get_data("level")
-        self.mode=self.window.get_data("mode")
-        self.boxes = []
-        self.character=None
-        self.grounds=[]
-        self.endpoints=[]
-        self.walls = []
 
-        self.map_objects=[]
-        self.mapList = [[  # Level 1
-        "ewwwww",
-        "wwcppw",
-        "wgbbww",
-        "wgggwe",
-        "wgggwe",
-        "wwwwwe"
-        ],
-    
-        [  # Level 2
-        "wwwwwww",
-        "wppbppw",
-        "wppwppw",
-        "wgbbbgw",
-        "wggbggw",
-        "wgbbbcw",
-        "wgggggw",
-        "wwwwwww"
-        ],
-    
-        [  # Level 3
-        "eeeewwwwweeeeeeeeew",
-        "eeeewgggweeeeeeeeee",
-        "eeeewbggweeeeeeeeee",
-        "eewwwggbwweeeeeeeee",
-        "eewggbgbgweeeeeeeee",
-        "wwwgwgwwgweeewwwwww",
-        "wgggwgwwgwwwwwggppw",
-        "wgbggbggggggggggppw",
-        "wwwwwgwwwgwcwwggppw",
-        "eeeewgggggwwwwwwwww",
-        "eeeewwwwwwweeeeeeee"
+        self.mode = self.window.get_data("mode")
+        self.level = self.window.get_data("level")
+        self.map_ori = self.window.get_data("map_ori_list")[self.level]
+        self.pos_history_list = self.window.get_data("pos_history_list").copy()
+        print(self.pos_history_list)
+        self.map_ori = [list(row) for row in self.map_ori]
+        self.map_current = self.window.get_data("map_current")
+        if len(self.map_current) == 0:
+            self.map_current = self.map_ori.copy()
+            self.window.set_data("map_current", self.map_current)
+        self.state = self.window.get_data("pos_state").copy()
+        self.pos_endpoints = self.window.get_data("pos_endpoints").copy()
 
-        ]]
-        self.window.set_data("map_ori", self.mapList)
-    def set_data(self):
-        self.window.set_data("map_current", self.mapList[self.level-1])
+        self.row_quantity = len(self.map_current)
+        self.col_quantity = len(self.map_current[0])
 
-        
-    def createMap(self):
-        tile_size = 50
-        map_data = self.maps[self.level-1]
-        objects = []   # list chứa tất cả object cần vẽ
+        self.screen_size = self.window.get_data("screen_size")
 
-        for row_index, row in enumerate(map_data):
+        self.tile_size = int(2 / 3 * self.screen_size[1] / self.row_quantity)
+
+        self.play_part_sceen_size = (round(self.tile_size * self.col_quantity), round(self.tile_size * self.row_quantity))
+        self.menu_part_screen_size = (self.play_part_sceen_size[0], round(1 / 2 * self.play_part_sceen_size[1]))
+        self.screen_size = (self.play_part_sceen_size[0], round(self.play_part_sceen_size[1] + self.menu_part_screen_size[1]))
+        self.window.set_data("screen_size", self.screen_size)
+        self.screen = pygame.display.set_mode(self.screen_size)
+        self.objects = []
+
+
+    def create_map(self):
+        self.objects = []
+        pos_endpoints = []
+        pos_boxes = []
+        pos_character = None
+
+        self.map_current = self.window.get_data("map_current")
+        print(self.map_current)
+
+        for row_index, row in enumerate(self.map_current):
             for col_index, cell in enumerate(row):
-                x = col_index * tile_size
-                y = row_index * tile_size
+                x = col_index * self.tile_size
+                y = row_index * self.tile_size + self.menu_part_screen_size[1]
 
                 if cell == "w":  # tường
-                    obj = wall.Wall(x, y, tile_size)
-                    self.walls.append(obj)
-                    objects.append(obj)
+                    obj = Wall(x, y, self.tile_size)
+                    self.objects.append(obj)
 
                 elif cell == "g":  # mặt đất
-                    obj = ground.Ground(x, y, tile_size)
-                    self.grounds.append(obj)
-                    objects.append(obj)
+                    obj = Ground(x, y, self.tile_size)
+                    self.objects.append(obj)
 
                 elif cell == "b":  # thùng
-                    g = ground.Ground(x, y, tile_size)
-                    b = box.Box(x, y, tile_size)
-                    self.grounds.append(g)
-                    self.boxes.append(b)
-                    objects.extend([g, b])
+                    g = Ground(x, y, self.tile_size)
+                    b = Box(x, y, self.tile_size)
+                    pos_boxes.append((col_index, row_index))
+                    if self.pos_endpoints and (col_index, row_index) in self.pos_endpoints:
+                        p = Endpoint(x, y, self.tile_size)
+                        self.objects.extend([g, p, b])
+                    else:
+                        self.objects.extend([g, b])
 
                 elif cell == "c":  # nhân vật
-                    g = ground.Ground(x, y, tile_size)
-                    c = character.Character(x, y, tile_size)
-                    self.grounds.append(g)
-                    self.character = c
-                    objects.extend([g, c])
+                    g = Ground(x, y, self.tile_size)
+                    c = Character(self.window, x, y, self.tile_size)
+                    pos_character = (col_index, row_index)
+                    if self.pos_endpoints and (col_index, row_index) in self.pos_endpoints:
+                        p = Endpoint(x, y, self.tile_size)
+                        self.objects.extend([g, p, c])
+                    else:
+                        self.objects.extend([g, c])
 
                 elif cell == "e":  # khoảng trống
-                    g = ground.Ground(x, y, tile_size)
-                    self.grounds.append(g)
-                    objects.append(g)
+                    g = Ground(x, y, self.tile_size)
+                    self.objects.append(g)
 
                 elif cell == "p":  # điểm đích
-                    g = ground.Ground(x, y, tile_size)
-                    p = endpoint.Endpoint(x, y, tile_size)
-                    self.grounds.append(g)
-                    self.endpoints.append(p)
-                    objects.extend([g, p])
+                    g = Ground(x, y, self.tile_size)
+                    p = Endpoint(x, y, self.tile_size)
+                    pos_endpoints.append((col_index, row_index))
+                    self.objects.extend([g, p])
 
-        self.map_objects = objects
-        self.set_data()   # lưu lại list object để drawMap xài
+        if len(self.pos_endpoints) == 0:
+            self.pos_endpoints = pos_endpoints.copy()
+            self.window.set_data("pos_endpoints", self.pos_endpoints)
 
-    def drawMap(self):
-        for obj in self.map_objects:
+        if len(self.state) == 0:
+            self.state = {
+                "pos_character" : pos_character,
+                "pos_boxes" : pos_boxes.copy()
+            }
+            self.window.set_data("pos_state", self.state)
+
+    def draw_map(self):
+        for obj in self.objects:
             self.screen.blit(obj.image, obj.rect)
-
-
-
-
-

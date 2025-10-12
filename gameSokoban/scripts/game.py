@@ -9,18 +9,17 @@ def start():
     
     window = Window()
 
-    menu = Menu(window)
-    game_play = Gameplay(window)
-
-    screens = {
-        "menu" : menu,
-        "game_play" : game_play
-    }
+    screen = None
 
     running = True
     while running:
-        screen = screens[window.get_data("status_screen")]
-        
+        name = window.get_data("status_screen")
+        if name == "menu" and not isinstance(screen, Menu):
+            screen = Menu(window)
+
+        elif name == "gameplay" and not isinstance(screen, Gameplay):
+            screen = Gameplay(window)
+
         running = screen.handle_events(None)
 
         for event in pygame.event.get():
@@ -29,6 +28,7 @@ def start():
 
         if running:    
             screen.run()
+        else:
+            screen.release()
 
-    screen.release()
     pygame.quit()

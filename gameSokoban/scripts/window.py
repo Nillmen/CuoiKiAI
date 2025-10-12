@@ -20,7 +20,66 @@ class Window():
         self.icon = pygame.transform.scale(self.icon_ori, (32, 32))
         pygame.display.set_icon(self.icon)
 
-        self.data = {"status_screen" : "menu"}
+        self.data_ori = {
+            "status_screen" : "menu",
+            "menu_back" : False,
+            "map_ori_list" : [
+                [],
+                [  # Level 1
+                "wwwwwww",
+    "wpwwggw",
+    "wgwwgbw",
+    "wgwcggw",
+    "wgggbgw",
+    "wggggpw",
+    "wwwwwww"
+                ],
+                [  # Level 2
+                "wwwwwww",
+                "wppbppw",
+                "wppwppw",
+                "wgbbbgw",
+                "wggbggw",
+                "wgbbbcw",
+                "wgggggw",
+                "wwwwwww"
+                ],
+                [  # Level 3
+                "eeeewwwwweeeeeeeeew",
+                "eeeewgggweeeeeeeeee",
+                "eeeewbggweeeeeeeeee",
+                "eewwwggbwweeeeeeeee",
+                "eewggbgbgweeeeeeeee",
+                "wwwgwgwwgweeewwwwww",
+                "wgggwgwwgwwwwwggppw",
+                "wgbggbggggggggggppw",
+                "wwwwwgwwwgwcwwggppw",
+                "eeeewgggggwwwwwwwww",
+                "eeeewwwwwwweeeeeeee"
+                ]
+            ],
+            "map_current" : [],
+            "level" : 0,
+            "pos_history_list" : [],
+            "pos_endpoints" : [],
+            "pos_state" : {},
+            "limit_condition_algorithm" : {
+                "max_time" : 10,
+                "max_step" : 1000000
+            },
+            "algorithm_time_run_each_step" : 0.5,
+            "fps" : 30,
+            "algorithm" : ""
+        }
+        self.data = self.data_ori.copy()
+
+    def reset_data(self):
+        mode = self.data["mode"]
+        level = self.data["level"]
+        self.data = self.data_ori.copy()
+        self.data["mode"] = mode
+        self.data["level"] = level
+        print(self.data)
 
     def set_data(self, name, value):
         self.data[name] = value
