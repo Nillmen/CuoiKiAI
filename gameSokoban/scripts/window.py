@@ -63,12 +63,45 @@ class Window():
             "pos_endpoints" : [],
             "pos_state" : {},
             "limit_condition_algorithm" : {
-                "max_time" : 10,
-                "max_step" : 1000000
+                "max_time" : 5,
+                "max_step" : 500000
             },
-            "algorithm_time_run_each_step" : 1,
+            "algorithm_time_run_each_step" : 0.3,
             "fps" : 30,
-            "algorithm" : ""
+            "algorithm" : "",
+            "game_play_human" : {
+                "TextClockHuman" : {
+                    "elapsed" : None,
+                    "stop" : None
+                },
+                "TextStatusHuman" : {
+                    "text" : ""
+                },
+                "TextEsc" : {
+                    "show" : None
+                }
+            },
+            "game_play_AI" : {
+                "Controller" : None,
+                "ButtonPlayAI" : {
+                    "angle" : None,
+                    "speed" : None
+                },
+                "TextStatusAI" : {
+                    "text" : ""
+                },
+                "TextEsc" : {
+                    "show" : None
+                },
+                "ButtonSelectAlgorithm" : {
+                    "zoom_current_rate" : None,
+                    "zoom_init_rate" : None
+                },
+            },
+            "algorithm_list"  : [
+                "bfs",
+                "dfs"
+            ]
         }
         self.data = self.data_ori.copy()
 

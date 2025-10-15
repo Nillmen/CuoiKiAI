@@ -16,10 +16,11 @@ class Map():
         self.pos_history_list = self.window.get_data("pos_history_list").copy()
         print(self.pos_history_list)
         self.map_ori = [list(row) for row in self.map_ori]
-        self.map_current = self.window.get_data("map_current")
+        self.map_current = self.window.get_data("map_current").copy()
         if len(self.map_current) == 0:
             self.map_current = self.map_ori.copy()
             self.window.set_data("map_current", self.map_current)
+        print("mapcurrent", self.map_current)
         self.state = self.window.get_data("pos_state").copy()
         self.pos_endpoints = self.window.get_data("pos_endpoints").copy()
 

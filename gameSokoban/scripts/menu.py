@@ -1,8 +1,9 @@
 import pygame
 import cv2
-import math
 import time
 from PIL import Image
+
+from scripts.extra import ExtraFunc, QuantumInt
 
 pygame.init()
 pygame.mixer.init()
@@ -33,33 +34,6 @@ music_bg_path = r"sounds\FrenchFuse-Space-YouTube.mp3"
 pygame.mixer.music.load(music_bg_path)
 
 sound_clicked_button_path = r"sounds\buttonClicked.mp3"
-
-class QuantumInt():
-    def __eq__(self, value):
-        return isinstance(value, int)
-
-class ExtraFunc():
-    def __init__(self):
-        pass
-    def normalize_speed(self, d, s):
-        if d <= s:
-            return d
-        frac, interger = math.modf(round(d / s, 5))
-        if frac >= 0.5:
-            s = d / (interger + 1)
-        elif 0 < frac < 0.5:
-            s = d / (interger - 1)
-        return s
-    def direction(self, a):
-        if a != 0:
-            return a / abs(a)
-        else:
-            return a
-    def distance(self, a, b):
-        dx = (b[0] - a[0])**2
-        dy = (b[1] - a[1])**2
-        d = math.sqrt(dx + dy)
-        return round(d, 5)
             
 all_frame = QuantumInt()
 extra_func = ExtraFunc()
@@ -124,28 +98,34 @@ scenes = [{
             }
         }, {
             "video_bg_path": video_bg_paths[3],
-            "init" : {"ButtonLevel1" : -1, "TextDetailLevel" : -1},
+            "init" : {"ButtonLevel1" : -1, "ButtonLevel2" : -1, "ButtonLevel3" : -1, "TextDetailLevel" : -1},
             "remove" : ["ButtonHumanSelector", "ButtonAISelector", "TextDetailMode"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "K_ESCAPE" : {
                     "scene" : -1,
-                    "ButtonLevel1" : -1
+                    "ButtonLevel1" : -1,
+                    "ButtonLevel2" : -1,
+                    "ButtonLevel3" : -1
                 },
                 "MOUSE" : {
                     "ButtonLevel1" : -1,
-                    "TextDetailLevel" : -1
+                    "TextDetailLevel" : -1,
+                    "ButtonLevel2" : -1,
+                    "ButtonLevel3" : -1
                 },
                 "MOUSE1" : {
                     "scene" : -1,
                     "ButtonLevel1" : -1,
-                    "TextDetailLevel" : -1
+                    "TextDetailLevel" : -1,
+                    "ButtonLevel2" : -1,
+                    "ButtonLevel3" : -1
                 }
             }
         }, {
             "video_bg_path": video_bg_paths[4],
             "init" : {"TextPlay" : 0},
-            "remove" : ["ButtonLevel1", "TextDetailLevel", "TextEsc"],
+            "remove" : ["ButtonLevel1", "ButtonLevel2", "ButtonLevel3", "TextDetailLevel", "TextEsc"],
             "remain" : ["music_bg"],
             "event" : {
                 "end_frame" : {
@@ -210,7 +190,7 @@ scenes_rev = [{
         }, {
             "video_bg_rev_path": video_bg_rev_paths[2],
             "init" : {"ButtonHumanSelector" : -1, "ButtonAISelector" : -1, "TextDetailMode" : -1},
-            "remove" : ["ButtonLevel1", "TextDetailLevel"],
+            "remove" : ["ButtonLevel1", "ButtonLevel2", "ButtonLevel3", "TextDetailLevel"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "MOUSE1" : {
@@ -233,23 +213,29 @@ scenes_rev = [{
             }
         }, {
             "video_bg_rev_path": video_bg_rev_paths[3],
-            "init" : {"ButtonLevel1" : -1, "TextDetailLevel" : -1},
+            "init" : {"ButtonLevel1" : -1, "ButtonLevel2" : -1, "ButtonLevel3" : -1, "TextDetailLevel" : -1},
             "remove" : ["TextPlay"],
             "remain" : ["TextEsc", "music_bg"],
             "event" : {
                 "K_ESCAPE" : {
                     "scene" : -1,
                     "ButtonLevel1" : -1,
-                    "TextDetailLevel" : -1
+                    "TextDetailLevel" : -1,
+                    "ButtonLevel2" : -1,
+                    "ButtonLevel3" : -1
                 },
                 "MOUSE" : {
                     "ButtonLevel1" : -1,
-                    "TextDetailLevel" : -1
+                    "TextDetailLevel" : -1,
+                    "ButtonLevel2" : -1,
+                    "ButtonLevel3" : -1
                 },
                 "MOUSE1" : {
                     "scene" : -1,
                     "ButtonLevel1" : -1,
-                    "TextDetailLevel" : -1
+                    "TextDetailLevel" : -1,
+                    "ButtonLevel2" : -1,
+                    "ButtonLevel3" : -1
                 }
             }
         }
@@ -287,6 +273,8 @@ class Menu():
         self.button_AI_selector = None
         self.text_detail_mode = None
         self.button_level_1 = None
+        self.button_level_2 = None
+        self.button_level_3 = None
         self.text_detail_level = None
         self.text_play = None
 
@@ -297,12 +285,6 @@ class Menu():
             self.text_play.change_text()
             self.text_esc = TextEsc(self.window)
             self.index_scene = 5
-            self.button_start = None
-            self.button_human_selector = None
-            self.button_AI_selector = None
-            self.text_detail_mode = None
-            self.button_level_1 = None
-            self.text_detail_level = None
             self.button_exit = None
             self.text_continue = None
             pygame.mixer.music.play(-1)
@@ -340,7 +322,9 @@ class Menu():
                     "ButtonStart" : self.button_start,
                     "ButtonHumanSelector" : self.button_human_selector,
                     "ButtonAISelector" : self.button_AI_selector,
-                    "ButtonLevel1" : self.button_level_1
+                    "ButtonLevel1" : self.button_level_1,
+                    "ButtonLevel2" : self.button_level_2,
+                    "ButtonLevel3" : self.button_level_3
                 }
                 for name, button in buttons.items():
                     if name in k_esc_event_in_scene and k_esc_event_in_scene.get(name) == self.index_frame_video_bg and button:
@@ -364,7 +348,9 @@ class Menu():
                         "ButtonStart" : self.button_start, 
                         "ButtonHumanSelector" : self.button_human_selector, 
                         "ButtonAISelector" : self.button_AI_selector, 
-                        "ButtonLevel1" : self.button_level_1
+                        "ButtonLevel1" : self.button_level_1,
+                        "ButtonLevel2" : self.button_level_2,
+                        "ButtonLevel3" : self.button_level_3
                     }
 
                     for name, button in buttons.items():
@@ -374,8 +360,9 @@ class Menu():
                                 for button in buttons.values():
                                     if button:
                                        button.clicked()
-                                       if button.check_collided(pos) and (name == "ButtonHumanSelector" or name == "ButtonAISelector"):
-                                           button.set_data()
+                                       if button.check_collided(pos):
+                                           if callable(getattr(button, "set_data", None)):
+                                               button.set_data()
                                 self.scenes = scenes
                                 self.index_scene += 1
                                 self.set_background(self.scenes[self.index_scene]["video_bg_path"])
@@ -422,6 +409,8 @@ class Menu():
                 if "TextDetailLevel" in mouse_event_in_scene and mouse_event_in_scene.get("TextDetailLevel") == self.index_frame_video_bg and self.text_detail_level:
                     buttons = {
                         "ButtonLevel1" : [self.button_level_1, "Cấp độ dễ"],
+                        "ButtonLevel2" : [self.button_level_2, "Cấp độ bình thường"],
+                        "ButtonLevel3" : [self.button_level_3, "Cấp độ khó"]
                     }
                     for name, infor in buttons.items():
                         button = infor[0]
@@ -471,7 +460,7 @@ class Menu():
             self.screen.blit(frame, (0, 0))
 
     def draw_ui(self):
-        t = time.perf_counter()*1000
+        t = time.perf_counter()
 
         text_list = [
             self.text_continue, 
@@ -489,7 +478,9 @@ class Menu():
             self.button_exit : self.fps,
             self.button_human_selector : None,
             self.button_AI_selector : None,
-            self.button_level_1 : None
+            self.button_level_1 : None,
+            self.button_level_2 : None,
+            self.button_level_3 : None
         }
         for button, para in buttons.items():
             if button and para:
@@ -518,6 +509,10 @@ class Menu():
                     object = ButtonAISelector(self.window)
                 elif name == "ButtonLevel1":
                     object = ButtonLevel(self.window, 1, 80)
+                elif name == "ButtonLevel2":
+                    object = ButtonLevel(self.window, 2, 250)
+                elif name == "ButtonLevel3":
+                    object = ButtonLevel(self.window, 3, 420)
             elif name in current_scene_config["remove"] and object is not None and object.out_screen:
                 object = None
         elif type == "text":
@@ -553,6 +548,8 @@ class Menu():
         self.button_AI_selector = self.update_object("ButtonAISelector", "button", self.button_AI_selector)
         
         self.button_level_1 = self.update_object("ButtonLevel1", "button", self.button_level_1)
+        self.button_level_2 = self.update_object("ButtonLevel2", "button", self.button_level_2)
+        self.button_level_3 = self.update_object("ButtonLevel3", "button", self.button_level_3)
 
     def release(self):
         if self.cap is not None:
@@ -742,9 +739,10 @@ class TextContinue():
         self.pos_center = (650, 690)
         self.rect = self.image.get_rect(center=self.pos_center)
 
-    def draw(self, t, speed_time=500):
-        if (t // speed_time) % 2 == 0:
-            self.screen.blit(self.image, self.rect)
+    def draw(self, t, speed_time=0.5):
+        alpha = int((abs((t % 1) - speed_time) * 2) * 255)
+        self.image.set_alpha(alpha)
+        self.screen.blit(self.image, self.rect)
 
 class TextEsc():
     def __init__(self, window):
@@ -757,9 +755,10 @@ class TextEsc():
         self.pos_center = (1180, 20)
         self.rect = self.image.get_rect(center=self.pos_center)
 
-    def draw(self, t, speed_time=500):
-        if (t // speed_time) % 2 == 0:
-            self.screen.blit(self.image, self.rect)
+    def draw(self, t, speed_time=0.5):
+        alpha = int((abs((t % 1) - speed_time) * 2) * 255)
+        self.image.set_alpha(alpha)
+        self.screen.blit(self.image, self.rect)
 
 class TextDetailMode():
     def __init__(self, window):
@@ -781,9 +780,10 @@ class TextDetailMode():
         self.image = self.font.render(self.text, True, self.color)
         self.rect = self.image.get_rect(center=self.pos_center)
 
-    def draw(self, t, speed_time=500):
-        if (t // speed_time) % 2 == 0:    
-            self.screen.blit(self.image, self.rect)
+    def draw(self, t, speed_time=0.5):
+        alpha = int((abs((t % 1) - speed_time) * 2) * 255)
+        self.image.set_alpha(alpha)
+        self.screen.blit(self.image, self.rect)
 
 class ButtonHumanSelector():
     def __init__(self, window):
@@ -1043,7 +1043,6 @@ class ButtonLevel():
     def clicked(self):
         self.pos_init_center, self.pos_goal_center = self.pos_goal_center, self.pos_init_center
         self.zoom_init_rate, self.zoom_goal_rate = self.zoom_goal_rate, self.zoom_init_rate
-        self.set_data()
 
     def set_data(self):
         self.window.set_data("level", self.level)
@@ -1109,9 +1108,10 @@ class TextDetailLevel():
         self.image = self.font.render(self.text, True, self.color)
         self.rect = self.image.get_rect(center=self.pos_center)
 
-    def draw(self, t, speed_time=500):
-        if (t // speed_time) % 2 == 0:    
-            self.screen.blit(self.image, self.rect)
+    def draw(self, t, speed_time=0.5):
+        alpha = int((abs((t % 1) - speed_time) * 2) * 255)
+        self.image.set_alpha(alpha)
+        self.screen.blit(self.image, self.rect)
 
 class TextPlay():
     def __init__(self, window):
@@ -1133,6 +1133,7 @@ class TextPlay():
         self.image = self.font.render(self.text, True, self.color)
         self.rect = self.image.get_rect(center=self.pos_center)
 
-    def draw(self, t, speed_time=500):
-        if (t // speed_time) % 2 == 0:    
-            self.screen.blit(self.image, self.rect)
+    def draw(self, t, speed_time=0.5):
+        alpha = int((abs((t % 1) - speed_time) * 2) * 255)
+        self.image.set_alpha(alpha)
+        self.screen.blit(self.image, self.rect)

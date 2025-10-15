@@ -1,41 +1,56 @@
 import copy
-from scripts.algorithm import bfs
+from scripts.algorithm import bfs, dfs
 
 class AIAlgorithm():
     def __init__(self, window):
         self.window = window
         self.algorithm = self.window.get_data("algorithm")
         self.map_data = copy.deepcopy(self.window.get_data("map_current"))
+        self.map_data = [list(row) for row in self.map_data]
         self.limit_condition_algorithm = self.window.get_data("limit_condition_algorithm")
         self.max_time = self.limit_condition_algorithm["max_time"]
         self.max_step = self.limit_condition_algorithm["max_step"]
-
-        self.boxPos = []
-        self.endPointPos = set()
+        self.pos_endpoints = self.window.get_data("pos_endpoints")
 
         self.height = len(self.map_data)
         self.width = len(self.map_data[0])
+        self.bfs_in_infor = bfs.input_infor(self)
+        self.dfs_in_infor = dfs.input_infor(self)
+
+        self.boxPos = []
+        self.endPointPos = set()
 
         self.observed_states = []
 
         self.directions = [(-1,0),(1,0),(0,-1),(0,1)]
 
-        if len(self.algorithm) == 0:
-            self.algorithm = "bfs" 
+        self.solution_found = False
 
     def get_response(self):
         if self.algorithm == "bfs":
             return bfs.run(self)
+        if self.algorithm == "dfs":
+            return dfs.run(self)
         
+    def get_input(self):
+        if self.algorithm == "bfs":
+            return bfs.input_infor(self)
+        elif self.algorithm == "dfs":
+            return dfs.input_infor(self)
+
     def add_data(self):
         self.boxPos.clear()
         self.endPointPos.clear()
+        print("debug", self.map_data)
         for i in range(self.height):
             for j in range(self.width):
                 if self.map_data[i][j] == 'b':
                     self.boxPos.append((i, j))
                 elif self.map_data[i][j] == 'p':
                     self.endPointPos.add((i, j))
+                elif self.map_data[i][j] == 'c':
+                    if (j, i) in self.pos_endpoints:
+                        self.endPointPos.add((i, j))
 
     def get_player_pos(self):
         for i in range(self.height):
@@ -63,6 +78,7 @@ class AIAlgorithm():
     
     def save_result(self,steps,is_solution,state_count,step_count):
         path=self.get_path(steps)
+        self.solution_found = is_solution
         algorithm_details = {
             "total_states_visited": state_count,
             "total_steps_processed": step_count,
@@ -85,60 +101,84 @@ class AIAlgorithm():
             return True
         elif (newX, newY) in boxes:
             newBoxX, newBoxY = self.pushed_to_point(curX, curY, newX, newY)
-            if self.box_is_blocked(newBoxX, newBoxY, boxes):
+            index = boxes.index((newX, newY))
+            if self.box_is_blocked(newBoxX, newBoxY, boxes, index):
                 return True
             
-    def box_is_blocked(self,newX, newY, boxes):
+    def box_is_blocked(self,newX, newY, boxes, index):
         return (
             self.map_data[newX][newY] == "w"
             or (newX, newY) in boxes
-            or self.box_is_dead_lock(newX, newY, boxes)
+            or self.box_is_dead_lock(newX, newY, boxes, index)
         )
     
     def pushed_to_point(self,playerX, playerY, boxX, boxY):
         return (boxX + (boxX - playerX), boxY + (boxY - playerY))
-    
-    def box_is_dead_lock(self,x, y, boxes):
-        """Kiểm tra deadlock theo hướng 'unmovable box'"""
+            
+    def box_is_dead_lock(self, x, y, boxes, index):
         if (x, y) in self.endPointPos:
             return False
 
-        boxes_set = set(boxes)
-        unmovables = set()
+        new_boxes = list(boxes)
+
+        new_boxes[index] = (x,y)
+
+        boxes_set = set(new_boxes)
+
+        deadlock_boxes = []
 
         for b in boxes_set:
-            if b not in self.endPointPos and not self.is_pushable(b, boxes_set):
-                unmovables.add(b)
+            temporary_deadlock = False
 
+            depend_boxes = set()
 
-        if (x, y) in unmovables:
-            adj_walls = sum(
-                1 for dx, dy in self.directions
-                if self.map_data[x + dx][y + dy] == 'w'
-            )
-            if adj_walls >= 2:
+            adjacent_directions = [
+                ((-1, 0), (0, 1)),
+                ((0, 1), (1, 0)),
+                ((1, 0), (0, -1)),
+                ((0, -1), (-1, 0))
+            ]
+
+            for dir1, dir2 in adjacent_directions:
+                pos1 = (b[0] + dir1[0], b[1] + dir1[1])
+                pos2 = (b[0] + dir2[0], b[1] + dir2[1])
+                
+                is_blocked1 = (self.map_data[pos1[0]][pos1[1]] == 'w' or pos1 in boxes_set)
+                
+                is_blocked2 = (self.map_data[pos2[0]][pos2[1]] == 'w' or pos2 in boxes_set)
+
+                if is_blocked1 and is_blocked2:
+
+                    temporary_deadlock = True
+                    
+                    if pos1 in boxes_set:
+                        depend_boxes.add(pos1)
+                    if pos2 in boxes_set:
+                        depend_boxes.add(pos2)
+                
+            deadlock_boxes.append({
+                "pos" : b,
+                "temporary_deadlock" : temporary_deadlock,
+                "depend_boxes" : depend_boxes
+            })
+        
+        for d in deadlock_boxes:
+            if d["temporary_deadlock"] and len(d["depend_boxes"]) == 0:
                 return True
-            
-        for dx, dy in [(1, 0), (0, 1)]:
-            if (x + dx, y + dy) in unmovables:
-                return True
-            
-    def is_pushable(self,box_pos, boxes):
-        """Kiểm tra xem hộp có thể bị đẩy theo hướng nào không
-        trước trống
-        sau trống
-        trống = ko hộp,ko tường
-        """
-        x, y = box_pos
-        for dx, dy in self.directions:
-            front = (x + dx, y + dy)
-            back = (x - dx, y - dy)
-            if (front not in boxes and back not in boxes
-                and self.map_data[front[0]][front[1]] != 'w'
-                and self.map_data[back[0]][back[1]] != 'w'):
-                return True
+            elif d["temporary_deadlock"]:
+                for db in d["depend_boxes"]:
+                    len_true = 0
+                    for b in deadlock_boxes:
+                        if b["pos"] == db and b["temporary_deadlock"]:
+                            len_true += 1
+                    if len_true == len(d["depend_boxes"]):
+                        return True
+        
         return False
     
+    def check_win(self):
+        return self.solution_found
+
     def check_limit_condition(self, step_count, period_time):
         if step_count >= self.max_step or period_time >= self.max_time:
             return True

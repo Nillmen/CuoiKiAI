@@ -2,6 +2,7 @@ import pygame
 from scripts.menu import Menu
 from scripts.gameplay import Gameplay
 from scripts.window import Window
+from scripts.algorithmSelector import AlgorithmSelector
 
 pygame.init()
 
@@ -19,6 +20,9 @@ def start():
 
         elif name == "gameplay" and not isinstance(screen, Gameplay):
             screen = Gameplay(window)
+
+        elif name == "algorithmSelector" and not isinstance(screen, AlgorithmSelector):
+            screen = AlgorithmSelector(window)
 
         running = screen.handle_events(None)
 
