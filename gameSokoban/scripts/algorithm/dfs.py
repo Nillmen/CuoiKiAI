@@ -33,7 +33,7 @@ def check_input_infor(self, key_value_list):
     if (x_old, y_old) != (x_new, y_new):
         level = self.window.get_data("level")
         map_data = self.window.get_data("map_ori_list")[level]
-        if map_data[x_new][y_new] == "b":
+        if x_new >= len(map_data) or y_new >= len(map_data[0]) or map_data[x_new][y_new] == "b" or map_data[x_new][y_new] == "w":
             return False
     return True
     
