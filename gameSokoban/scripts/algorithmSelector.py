@@ -100,7 +100,7 @@ class AlgorithmSelector:
         self.data["ButtonPlayAI"]["speed"] = None
 
     def create_input_boxes(self):
-        self.input_infor = dict_algorithm[self.selected_algorithm].input_infor(self.controller.ai_algorithm)
+        self.input_infor = dict_algorithm[self.selected_algorithm].input_infor(self.controller.ai_algorithm).copy()
         for label, entry in self.input_boxes:
             label.kill()
             entry.kill()
