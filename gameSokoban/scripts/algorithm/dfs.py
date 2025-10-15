@@ -1,9 +1,9 @@
 import time
-from collections import deque
+import copy
 
 def input_infor(self):
     playerX, playerY = self.get_player_pos()
-    self.bfs_in_infor = {
+    self.dfs_in_infor = {
         "pos_character_row" : {
             "type" : int,
             "value" : playerX
@@ -13,7 +13,7 @@ def input_infor(self):
             "value" : playerY
         } 
     }
-    return self.bfs_in_infor
+    return self.dfs_in_infor
 
 def check_input_infor(self, key_value_list):
     for key_value in key_value_list:
@@ -22,8 +22,8 @@ def check_input_infor(self, key_value_list):
                 v = int(value)
             except:
                 return False
-    x_old = self.bfs_in_infor["pos_character_row"]["value"]
-    y_old = self.bfs_in_infor["pos_character_col"]["value"]
+    x_old = self.dfs_in_infor["pos_character_row"]["value"]
+    y_old = self.dfs_in_infor["pos_character_col"]["value"]
     x_new = None
     y_new = None
     for key, value in key_value_list[0].items():
@@ -36,12 +36,12 @@ def check_input_infor(self, key_value_list):
         if map_data[x_new][y_new] == "b":
             return False
     return True
-
+    
 def change_input_infor(self):
-    playerX_new = int(self.bfs_in_infor["pos_character_row"]["value"])
-    playerY_new = int(self.bfs_in_infor["pos_character_col"]["value"])
+    playerX_new = int(self.dfs_in_infor["pos_character_row"]["value"])
+    playerY_new = int(self.dfs_in_infor["pos_character_col"]["value"])
 
-    print("new", type(self.bfs_in_infor["pos_character_row"]["value"]), type(self.bfs_in_infor["pos_character_col"]["value"]), playerX_new, playerY_new)
+    print("new", type(self.dfs_in_infor["pos_character_row"]["value"]), type(self.dfs_in_infor["pos_character_col"]["value"]), playerX_new, playerY_new)
 
     playerX_old, playerY_old = self.get_player_pos()
 
@@ -49,37 +49,38 @@ def change_input_infor(self):
     if (playerX_new, playerY_new) != (playerX_old, playerY_old):
         self.map_data[playerX_new][playerY_new] = "c"
         self.map_data[playerX_old][playerY_old] = "g"
-    print("change", self.map_data)
+    print(self.map_data)
     self.window.set_data("map_current", self.map_data)
 
 def run(self):
-    state_count = 0
-    step_count = 0
-    best_path = [] 
+    state_count = 0     # Dem tong trang thai da duyet
+    step_count = 0      # Dem tong so buoc da duyet
+    best_path = []      # Luu duong di tot nhat
 
     self.add_data()
     playerX, playerY = self.get_player_pos()
     steps = [(playerX, playerY)]
 
     initial_state = (playerX, playerY, tuple(self.boxPos))
-    queue = deque([(initial_state, steps)])
-    visited = set([initial_state])
+    stack = [(initial_state, steps)]
+    visited = set([initial_state])      # Cac trang thai da duyet
 
     start_time = time.perf_counter()
 
-    while queue:
-        (playerX, playerY, boxes), steps = queue.popleft()
+    while stack:
+        (playerX, playerY, boxes), steps = stack.pop()  # Stack - LIFO
 
         if self.check_limit_condition(step_count, time.perf_counter() - start_time):
             break
 
-        state_count += 1  
+        state_count += 1
 
-        self.observe(playerX, playerY, boxes, steps)
+        self.observe(playerX, playerY, boxes, steps, depth=len(steps))
 
         if len(steps) > len(best_path):
             best_path = steps
 
+        # Neu hop da duoc day vao dung vi tri -> luu ket qua va ket thuc
         if self.is_complete(boxes):
             return self.save_result(steps, is_solution=True,
                                     state_count=state_count,
@@ -99,8 +100,8 @@ def run(self):
             new_state = (newX, newY, tuple(sorted(new_boxes)))
             if new_state not in visited:
                 visited.add(new_state)
-                queue.append((new_state, steps + [(newX, newY)]))
-                step_count += 1  
+                stack.append((new_state, steps + [(newX, newY)]))   # Them trang thai moi vao stack
+                step_count += 1
 
     return self.save_result(best_path, is_solution=False,
                             state_count=state_count,
