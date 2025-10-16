@@ -141,3 +141,19 @@ Dưới đây là video demo của game, gồm các thuật toán được chạ
 ---------------------------------------------------
 
 
+# Demo Hill_climbing
+
+
+![Demo](gameSokoban/videos/hill_climbing.gif)
+
+
+---------------------------------------------------
+
+
+# Demo AC-3
+
+
+![Demo](gameSokoban/videos/ac3.gif)
+
+
+---------------------------------------------------
