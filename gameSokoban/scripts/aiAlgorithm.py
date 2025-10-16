@@ -1,7 +1,7 @@
 import copy
 import time
 from collections import deque
-from gameSokoban.scripts.algorithm import forward_tracking
+from scripts.algorithm import forward_tracking
 from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, hill_climbing, sa, ac3
 
 dict_algorithm = {
