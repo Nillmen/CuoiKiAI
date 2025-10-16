@@ -33,11 +33,11 @@ def check_input_infor(self, key_value_list):
     if (x_old, y_old) != (x_new, y_new):
         level = self.window.get_data("level")
         map_data = self.window.get_data("map_ori_list")[level]
-        if x_new >= len(map_data) or y_new >= len(map_data[0]) or map_data[x_new][y_new] == "b" or map_data[x_new][y_new] == "w":
+        if x_new >= len(map_data) or y_new >= len(map_data[0]) or map_data[x_new][y_new] == "b" or map_data[x_new][y_new] == "w" or map_data[x_new][y_new] == "e":
             return False
     return True
     
-def change_input_infor(self):
+def change_input_infor(self, key_value_list=None):
     playerX_new = int(self.dfs_in_infor["pos_character_row"]["value"])
     playerY_new = int(self.dfs_in_infor["pos_character_col"]["value"])
 
@@ -53,9 +53,9 @@ def change_input_infor(self):
     self.window.set_data("map_current", self.map_data)
 
 def run(self):
-    state_count = 0     # Dem tong trang thai da duyet
-    step_count = 0      # Dem tong so buoc da duyet
-    best_path = []      # Luu duong di tot nhat
+    state_count = 0     
+    step_count = 0      
+    best_path = []      
 
     self.add_data()
     playerX, playerY = self.get_player_pos()
@@ -63,24 +63,24 @@ def run(self):
 
     initial_state = (playerX, playerY, tuple(self.boxPos))
     stack = [(initial_state, steps)]
-    visited = set([initial_state])      # Cac trang thai da duyet
+    visited = set([initial_state])      
 
     start_time = time.perf_counter()
 
     while stack:
-        (playerX, playerY, boxes), steps = stack.pop()  # Stack - LIFO
+        (playerX, playerY, boxes), steps = stack.pop()  
 
         if self.check_limit_condition(step_count, time.perf_counter() - start_time):
             break
 
         state_count += 1
 
-        self.observe(playerX, playerY, boxes, steps, depth=len(steps))
+        self.observe(playerX, playerY, boxes, len_queue=len(stack), steps=steps, depth=len(steps))
 
         if len(steps) > len(best_path):
             best_path = steps
 
-        # Neu hop da duoc day vao dung vi tri -> luu ket qua va ket thuc
+
         if self.is_complete(boxes):
             return self.save_result(steps, is_solution=True,
                                     state_count=state_count,
@@ -100,7 +100,7 @@ def run(self):
             new_state = (newX, newY, tuple(sorted(new_boxes)))
             if new_state not in visited:
                 visited.add(new_state)
-                stack.append((new_state, steps + [(newX, newY)]))   # Them trang thai moi vao stack
+                stack.append((new_state, steps + [(newX, newY)]))   
                 step_count += 1
 
     return self.save_result(best_path, is_solution=False,

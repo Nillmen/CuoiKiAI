@@ -1,19 +1,14 @@
 import time
-from collections import deque
+import heapq
 
 def input_infor(self):
     playerX, playerY = self.get_player_pos()
-    self.bfs_in_infor = {
-        "pos_character_row" : {
-            "type" : int,
-            "value" : playerX
-        },
-        "pos_character_col" : {
-            "type" : int,
-            "value" : playerY
-        } 
+    self.greedy_in_infor = {
+        "pos_character_row": {"type": int, "value": playerX},
+        "pos_character_col": {"type": int, "value": playerY}
     }
-    return self.bfs_in_infor
+    return self.greedy_in_infor
+
 
 def check_input_infor(self, key_value_list):
     for key_value in key_value_list:
@@ -22,62 +17,68 @@ def check_input_infor(self, key_value_list):
                 v = int(value)
             except:
                 return False
-    x_old = self.bfs_in_infor["pos_character_row"]["value"]
-    y_old = self.bfs_in_infor["pos_character_col"]["value"]
-    x_new = None
-    y_new = None
-    for key, value in key_value_list[0].items():
-        x_new = int(value)
-    for key, value in key_value_list[1].items():
-        y_new = int(value)
+    x_old = self.greedy_in_infor["pos_character_row"]["value"]
+    y_old = self.greedy_in_infor["pos_character_col"]["value"]
+    x_new = int(list(key_value_list[0].values())[0])
+    y_new = int(list(key_value_list[1].values())[0])
     if (x_old, y_old) != (x_new, y_new):
         level = self.window.get_data("level")
         map_data = self.window.get_data("map_ori_list")[level]
-        if x_new >= len(map_data) or y_new >= len(map_data[0]) or map_data[x_new][y_new] == "b" or map_data[x_new][y_new] == "w" or map_data[x_new][y_new] == "e":
+        if (x_new >= len(map_data)
+            or y_new >= len(map_data[0])
+            or map_data[x_new][y_new] in "bwe"):
             return False
     return True
 
+
 def change_input_infor(self, key_value_list=None):
-    playerX_new = int(self.bfs_in_infor["pos_character_row"]["value"])
-    playerY_new = int(self.bfs_in_infor["pos_character_col"]["value"])
-
-    print("new", type(self.bfs_in_infor["pos_character_row"]["value"]), type(self.bfs_in_infor["pos_character_col"]["value"]), playerX_new, playerY_new)
-
+    playerX_new = int(self.greedy_in_infor["pos_character_row"]["value"])
+    playerY_new = int(self.greedy_in_infor["pos_character_col"]["value"])
     playerX_old, playerY_old = self.get_player_pos()
-
-    print("old", playerX_old, playerY_old)
     if (playerX_new, playerY_new) != (playerX_old, playerY_old):
         self.map_data[playerX_new][playerY_new] = "c"
         self.map_data[playerX_old][playerY_old] = "g"
-    print("change", self.map_data)
     self.window.set_data("map_current", self.map_data)
+
 
 def run(self):
     state_count = 0
     step_count = 0
-    best_path = [] 
+    best_path = []
 
     self.add_data()
     playerX, playerY = self.get_player_pos()
     steps = [(playerX, playerY)]
-
     initial_state = (playerX, playerY, tuple(self.boxPos))
-    queue = deque([(initial_state, steps)])
+
+    def manhattan(a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+    def heuristic(state):
+        _, _, boxes = state
+        total = 0
+        for bx, by in boxes:
+            if not self.endPointPos:
+                continue
+            total += min(manhattan((bx, by), g) for g in self.endPointPos)
+        return total
+
+    open_list = []
+    tie = 0
+    heapq.heappush(open_list, (heuristic(initial_state), tie, initial_state, steps))
     visited = set([initial_state])
 
     start_time = time.perf_counter()
 
-    while queue:
-        print("đã vào queue")
-        (playerX, playerY, boxes), steps = queue.popleft()
+    while open_list:
+        _, _, (playerX, playerY, boxes), steps = heapq.heappop(open_list)
 
         if self.check_limit_condition(step_count, time.perf_counter() - start_time):
             break
 
-        state_count += 1  
-
+        state_count += 1
         current_depth = len(steps)
-        self.observe(playerX, playerY, boxes, len_queue=len(queue), steps=steps, depth=current_depth)
+        self.observe(playerX, playerY, boxes, len_queue=len(open_list), steps=steps, costH=heuristic((playerX, playerY, boxes)))
 
         if len(steps) > len(best_path):
             best_path = steps
@@ -101,8 +102,9 @@ def run(self):
             new_state = (newX, newY, tuple(sorted(new_boxes)))
             if new_state not in visited:
                 visited.add(new_state)
-                queue.append((new_state, steps + [(newX, newY)]))
-                step_count += 1  
+                tie += 1
+                heapq.heappush(open_list, (heuristic(new_state), tie, new_state, steps + [(newX, newY)]))
+                step_count += 1
 
     return self.save_result(best_path, is_solution=False,
                             state_count=state_count,
