@@ -34,14 +34,16 @@ def check_input_infor(self, key_value_list):
 
 
 def change_input_infor(self, key_value_list=None):
-    """Thay đổi vị trí nhân vật và cập nhật beam_width."""
     playerX_new = int(self.beam_in_infor["pos_character_row"]["value"])
     playerY_new = int(self.beam_in_infor["pos_character_col"]["value"])
     playerX_old, playerY_old = self.get_player_pos()
 
     if (playerX_new, playerY_new) != (playerX_old, playerY_old):
         self.map_data[playerX_new][playerY_new] = "c"
-        self.map_data[playerX_old][playerY_old] = "g"
+        if (playerY_old, playerX_old) in self.pos_endpoints:
+            self.map_data[playerX_old][playerY_old] = "p"
+        else:
+            self.map_data[playerX_old][playerY_old] = "g"
     if key_value_list and len(key_value_list) > 0:
         beam_width = int(list(key_value_list[2].values())[0])
         self.window.set_data("beam_width", beam_width)

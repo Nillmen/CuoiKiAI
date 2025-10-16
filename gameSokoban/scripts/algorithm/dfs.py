@@ -41,15 +41,15 @@ def change_input_infor(self, key_value_list=None):
     playerX_new = int(self.dfs_in_infor["pos_character_row"]["value"])
     playerY_new = int(self.dfs_in_infor["pos_character_col"]["value"])
 
-    print("new", type(self.dfs_in_infor["pos_character_row"]["value"]), type(self.dfs_in_infor["pos_character_col"]["value"]), playerX_new, playerY_new)
 
     playerX_old, playerY_old = self.get_player_pos()
 
-    print("old", playerX_old, playerY_old)
     if (playerX_new, playerY_new) != (playerX_old, playerY_old):
         self.map_data[playerX_new][playerY_new] = "c"
-        self.map_data[playerX_old][playerY_old] = "g"
-    print(self.map_data)
+        if (playerY_old, playerX_old) in self.pos_endpoints:
+            self.map_data[playerX_old][playerY_old] = "p"
+        else:
+            self.map_data[playerX_old][playerY_old] = "g"
     self.window.set_data("map_current", self.map_data)
 
 def run(self):
