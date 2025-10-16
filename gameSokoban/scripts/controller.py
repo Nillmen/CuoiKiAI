@@ -16,7 +16,6 @@ class Controller():
         self.algorithm_step_list, self.algorithm_detail_dict = None, None
         self.index_step_list = 0
 
-    #hàm undo
     def restore_state(self):
     
         if len(self.pos_history_list) == 0:
@@ -34,11 +33,10 @@ class Controller():
     def run_algorithm(self):
         if self.window.get_data("mode") == "AI" and len(self.ai_algorithm.algorithm) > 0:
             self.algorithm_step_list, self.algorithm_detail_dict = self.ai_algorithm.get_response()
-            print("Tổng số bước: ", self.algorithm_detail_dict["total_steps_processed"])
+
 
     def handle_AI_action(self):
         if self.algorithm_step_list is None or len(self.algorithm_step_list) == 0:
-            print("không tìm ra đáp án")
             return False
 
         if not hasattr(self, "last_ai_time"):
@@ -66,7 +64,7 @@ class Controller():
             dx = -1
         elif key == pygame.K_RIGHT:
             dx = 1
-        elif key == pygame.K_z:  # Phím Undo
+        elif key == pygame.K_z: 
             self.restore_state()
             return
         if dx == 0 and dy == 0:
@@ -159,6 +157,10 @@ class Controller():
             return False
         elif mode == "AI":
             return self.ai_algorithm.check_win()
+
+    def check_can_solve(self, mode):
+        if mode == "AI":
+            return self.ai_algorithm.check_can_solve()
 
     def check_algorithm_selecting(self):
         self.ai_algorithm.algorithm = self.window.get_data("algorithm")

@@ -1,13 +1,22 @@
 import pygame 
 import pygame_gui as pg
 import copy
-from scripts.algorithm import bfs, dfs
+from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, forward_backtracking, hill_climbing, sa
 
 dict_algorithm = {
     "bfs" : bfs,
-    "dfs" : dfs
+    "dfs" : dfs,
+    "ids" : ids,
+    "greedy" : greedy,
+    "beam" : beam,
+    "backtracking" : backtracking,
+    "partially_observable" : partially_observable,
+    "ucs" : ucs,
+    "astar" : astar,
+    "forward_backtracking" : forward_backtracking,
+    "hill_climbing" : hill_climbing,
+    "sa" : sa
 }
-
 class AlgorithmSelector:
     def __init__(self, window):
         self.window = window
@@ -19,7 +28,7 @@ class AlgorithmSelector:
         self.controller = self.data["Controller"]
         self.input_infor = {}
         self.input_boxes = []
-        self.algorithm_options = copy.deepcopy(self.window.get_data("algorithm_list"))
+        self.algorithm_options = copy.deepcopy(list(dict_algorithm.keys()))
 
         self.manager = pg.UIManager(self.screen.get_size())
 
@@ -43,7 +52,7 @@ class AlgorithmSelector:
         )
 
         self.selected_algorithm = self.algorithm_options[0]
-
+        self.key_value_list = []
         self.create_input_boxes()
 
         self.font = pygame.font.SysFont("Arial", 32, True)
@@ -57,19 +66,27 @@ class AlgorithmSelector:
         if event and event.type == pg.UI_DROP_DOWN_MENU_CHANGED:
             if event.ui_element == self.dropdown:
                 self.selected_algorithm = event.text
-                self.create_input_boxes()       
+                self.create_input_boxes()
+                self.key_value_list = []
+                for label, entry in self.input_boxes:
+                    key = label.text
+                    new_value = entry.get_text()
+                    key_value = {
+                        key : new_value
+                    }
+                    self.key_value_list.append(key_value)       
 
         if event and event.type == pg.UI_TEXT_ENTRY_FINISHED:
-            key_value_list = []
+            self.key_value_list = []
             for label, entry in self.input_boxes:
                 key = label.text
                 new_value = entry.get_text()
                 key_value = {
                     key : new_value
                 }
-                key_value_list.append(key_value)
+                self.key_value_list.append(key_value)
 
-            check = dict_algorithm[self.selected_algorithm].check_input_infor(self.controller.ai_algorithm, key_value_list)
+            check = dict_algorithm[self.selected_algorithm].check_input_infor(self.controller.ai_algorithm, self.key_value_list)
             if check:
                 for label, entry in self.input_boxes:
                     t = self.input_infor[label.text]["type"]
@@ -82,7 +99,7 @@ class AlgorithmSelector:
                 level = self.window.get_data("level")
                 map_ori = copy.deepcopy(self.window.get_data("map_ori_list")[level])
                 self.window.set_data("map_current", map_ori)
-                dict_algorithm[self.selected_algorithm].change_input_infor(self.controller.ai_algorithm)
+                dict_algorithm[self.selected_algorithm].change_input_infor(self.controller.ai_algorithm, self.key_value_list)
                 self.reset()
                 self.window.set_data("game_play_AI", self.data)
                 self.window.set_data("status_screen", "gameplay")
@@ -106,7 +123,6 @@ class AlgorithmSelector:
             entry.kill()
         self.input_boxes.clear()
 
-    # Giả sử mỗi lần chọn sẽ tạo ô nhập theo dict
         y = 300
         for key, value in self.input_infor.items():
             label = pg.elements.UILabel(
@@ -125,10 +141,8 @@ class AlgorithmSelector:
     def run(self):
         time_delta = self.clock.tick(self.fps) / 1000.0
 
-        # Cập nhật logic UI trước
         self.manager.update(time_delta)
 
-        # Rồi mới vẽ
         self.draw_ui()
         pygame.display.flip()
 

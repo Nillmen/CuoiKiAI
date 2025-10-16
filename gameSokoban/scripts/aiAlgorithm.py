@@ -1,5 +1,22 @@
 import copy
-from scripts.algorithm import bfs, dfs
+import time
+from collections import deque
+from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, forward_backtracking, hill_climbing, sa
+
+dict_algorithm = {
+    "bfs" : bfs,
+    "dfs" : dfs,
+    "ids" : ids,
+    "greedy" : greedy,
+    "beam" : beam,
+    "backtracking" : backtracking,
+    "partially_observable" : partially_observable,
+    "ucs" : ucs,
+    "astar" : astar,
+    "forward_backtracking" : forward_backtracking,
+    "hill_climbing" : hill_climbing,
+    "sa" : sa
+}
 
 class AIAlgorithm():
     def __init__(self, window):
@@ -14,8 +31,6 @@ class AIAlgorithm():
 
         self.height = len(self.map_data)
         self.width = len(self.map_data[0])
-        self.bfs_in_infor = bfs.input_infor(self)
-        self.dfs_in_infor = dfs.input_infor(self)
 
         self.boxPos = []
         self.endPointPos = set()
@@ -25,23 +40,28 @@ class AIAlgorithm():
         self.directions = [(-1,0),(1,0),(0,-1),(0,1)]
 
         self.solution_found = False
+        self.len_last_queue = 0
 
     def get_response(self):
-        if self.algorithm == "bfs":
-            return bfs.run(self)
-        if self.algorithm == "dfs":
-            return dfs.run(self)
-        
-    def get_input(self):
-        if self.algorithm == "bfs":
-            return bfs.input_infor(self)
-        elif self.algorithm == "dfs":
-            return dfs.input_infor(self)
+        return dict_algorithm[self.algorithm].run(self)
+
+    def get_full_path(self, path_steps, pos_start):
+        full_path = []
+        for i, step in enumerate(path_steps):
+            pos_x = None
+            pos_x = None
+            if i == 0:
+                pos_x = step[0] + pos_start[0]
+                pos_y = step[1] + pos_start[1]
+            else:
+                pos_x = step[0] + full_path[i - 1][0]
+                pos_y = step[1] + full_path[i - 1][1]
+            full_path.append((pos_x, pos_y))
+        return full_path
 
     def add_data(self):
         self.boxPos.clear()
         self.endPointPos.clear()
-        print("debug", self.map_data)
         for i in range(self.height):
             for j in range(self.width):
                 if self.map_data[i][j] == 'b':
@@ -57,14 +77,85 @@ class AIAlgorithm():
             for j in range(self.width):
                 if self.map_data[i][j] == 'c':
                     return (i, j)
+
+    def get_player_path_to_push(self, player_start, target_box, goal, other_boxes, depth=0):
+
+        initial_state = (player_start, target_box, frozenset(other_boxes))
+        queue = deque([(initial_state, [player_start])]) 
+        visited = {initial_state}
+        self.state_count += 1
+        
+        self.observe(player_start[0], player_start[1], list(other_boxes) + [target_box], depth=depth)
+        
+        while queue:
+            if self.check_limit_condition(self.step_count, time.perf_counter() - self.start_time):
+                return None
+            (p_pos, b_pos, others), path = queue.popleft()
+            self.state_count += 1
+            if b_pos == goal:
+                return path
+            
+            for dr, dc in self.directions:
+                new_p = (p_pos[0] + dr, p_pos[1] + dc)
+                if not self.is_free(new_p[0], new_p[1], others):
+                    continue
                 
-    def observe(self, playerX, playerY, boxes, steps=None, depth=None,
+                if new_p == b_pos:
+                    push_pos = (b_pos[0] + dr, b_pos[1] + dc)
+                    if not self.is_free(push_pos[0], push_pos[1], others):
+                        continue
+                    new_b = push_pos
+                    new_others = others
+                else:
+                    new_b = b_pos
+                    new_others = others
+                
+                new_state = (new_p, new_b, new_others)
+                if new_state not in visited:
+                    visited.add(new_state)
+                    new_path = path + [new_p]
+                    queue.append((new_state, new_path))
+                    self.step_count += 1
+                    new_depth = depth + len(new_path) - 1 
+                    self.observe(new_p[0], new_p[1], list(new_others) + [new_b], depth=new_depth)
+        
+        return None
+
+    def is_free(self,x, y, boxes):
+        if self.map_data[x][y] == 'w':
+            return False
+        if (x, y) in boxes:
+            return False
+        return True
+    from collections import deque
+
+    def get_distance(self,aX,aY,bX,bY):
+        return abs(aX - bX) + abs(aY - bY)
+
+    def g(self, player_pos, boxes):
+        if not boxes:
+            return 0
+        return min(self.get_distance(player_pos[0], player_pos[1], box[0], box[1]) for box in boxes)
+    def h(self, boxes):
+        if not boxes:
+            return 0
+        if not self.endPointPos:
+            return float('inf')
+        total = 0
+        for bx, by in boxes:
+            min_dist = min(self.get_distance(bx, by, gx, gy) for (gx, gy) in self.endPointPos)
+            total += min_dist
+        return total / len(boxes)
+    
+    def observe(self, playerX, playerY, boxes, len_queue=None, steps=None, depth=None, depth_limit=None,
             costH=None, costG=None, costF=None, mapNo=None, heat=None):
-        """Lưu lại trạng thái hiện tại của thuật toán"""
         state_info = {
             "player": (playerX, playerY),
             "boxes": list(boxes),
+            "len_queue" : len_queue,
+            "steps" : steps,
             "depth": depth,
+            "limit_depth" : depth_limit,
             "costH": costH,
             "costG": costG,
             "costF": costF,
@@ -75,7 +166,85 @@ class AIAlgorithm():
 
     def is_complete(self,boxes):
         return all(box in self.endPointPos for box in boxes)
-    
+
+    def can_player_push_box_to_goal(self, player_start, target_box, goal, other_boxes, depth=0):
+        initial_state = (player_start, target_box, frozenset(other_boxes))
+        queue = deque([initial_state])
+        visited = {initial_state}
+        self.state_count += 1
+        
+        self.observe(player_start[0], player_start[1], list(other_boxes) + [target_box], depth=depth)
+        
+        while queue:
+            if self.check_limit_condition(self.step_count, time.perf_counter() - self.start_time):
+                return False, None, None
+            p_pos, b_pos, others = queue.popleft()
+            self.state_count += 1
+            if b_pos == goal:
+                updated_boxes = tuple(sorted(list(others) + [goal]))
+                return True, updated_boxes, p_pos
+            
+            for dr, dc in self.directions:
+                new_p = (p_pos[0] + dr, p_pos[1] + dc)
+                if not self.is_free(new_p[0], new_p[1], others):
+                    continue
+                
+                if new_p == b_pos:
+                    push_pos = (b_pos[0] + dr, b_pos[1] + dc)
+                    if not self.is_free(push_pos[0], push_pos[1], others):
+                        continue
+                    new_b = push_pos
+                    new_others = others
+                else:
+                    new_b = b_pos
+                    new_others = others
+                
+                new_state = (new_p, new_b, new_others)
+                if new_state not in visited:
+                    visited.add(new_state)
+                    queue.append(new_state)
+                    self.step_count += 1 
+                    new_depth = depth + 1
+                    self.observe(new_p[0], new_p[1], list(new_others) + [new_b], len_queue=len(queue), depth=new_depth)
+        
+        return False, None, None
+
+    def forward_check(self,domains, assigned_goal, var_idx, num_vars):
+        for i in range(var_idx + 1, num_vars):
+            domains[i].discard(assigned_goal)
+            if not domains[i]:
+                return False
+        return True
+
+    def backtrack(self, order, level, domains, current_boxes, player_pos, assignment, depth=0):
+
+        if self.check_limit_condition(self.step_count, time.perf_counter() - self.start_time):
+            return None
+        
+        if level == len(order):
+            return {'mapping': assignment.copy(), 'order': order}
+        
+        self.observe(player_pos[0], player_pos[1], list(current_boxes), depth=depth)
+        self.state_count += 1 
+        
+        box = order[level]
+        for goal in list(domains[level]):
+            success, new_boxes, new_player = self.can_player_push_box_to_goal(player_pos, box, goal, set(current_boxes) - {box}, depth=depth)
+            if not success:
+                continue
+            
+            assignment[box] = goal
+            old_domains = [d.copy() for d in domains]
+            
+            if self.forward_check(domains, goal, level, len(order)):
+                result = self.backtrack(order, level + 1, domains, new_boxes, new_player, assignment, depth + 1)
+                if result:
+                    return result
+
+            domains[:] = old_domains
+        
+        return None
+
     def save_result(self,steps,is_solution,state_count,step_count):
         path=self.get_path(steps)
         self.solution_found = is_solution
@@ -88,13 +257,19 @@ class AIAlgorithm():
         }
         return path, algorithm_details
     
-    def get_path(self,steps):
+    def get_path(self, steps):
         path = []
         for i in range(len(steps) - 1):
             dx = steps[i + 1][0] - steps[i][0]
             dy = steps[i + 1][1] - steps[i][1]
             path.append((dy, dx))
         return path
+    
+    def get_last_len_queue(self):
+        if self.observed_states[-1]["len_queue"]:
+            return self.observed_states[-1]["len_queue"]
+        else:
+            return 0
 
     def player_is_blocked(self,curX, curY, newX, newY, boxes):
         if self.map_data[newX][newY] == "w":
@@ -176,8 +351,44 @@ class AIAlgorithm():
         
         return False
     
+    def extract_player_path(self, solution, initial_player_pos):
+        if not solution:
+            return None
+        
+        mapping = solution['mapping']
+        order = solution['box_order'] 
+        full_path = [initial_player_pos]
+        player_pos = initial_player_pos
+        current_boxes = list(self.boxPos)  
+        overall_depth = 0
+        
+        for idx, box in enumerate(order):
+            goal = mapping[box]
+            other_boxes_set = set(current_boxes) - {box}
+            
+            sub_path = self.get_player_path_to_push(player_pos, box, goal, other_boxes_set, depth=overall_depth)
+            if sub_path is None:
+                return None 
+            
+           
+            full_path += sub_path[1:]
+            player_pos = sub_path[-1] 
+            
+
+            current_box_idx = current_boxes.index(box)
+            current_boxes[current_box_idx] = goal
+            
+            overall_depth += len(sub_path)
+        
+        return full_path
+
     def check_win(self):
         return self.solution_found
+    
+    def check_can_solve(self):
+        if self.get_last_len_queue() > 1:
+            return True
+        return False
 
     def check_limit_condition(self, step_count, period_time):
         if step_count >= self.max_step or period_time >= self.max_time:

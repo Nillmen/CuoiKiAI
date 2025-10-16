@@ -37,7 +37,7 @@ class Gameplay():
         self.button_select_algorithm = None
         self.button_extract = None
         if self.mode == "human":
-            self.text_clock_human = TextClockHuman(self.window, 30, self.data_human["TextClockHuman"].copy())
+            self.text_clock_human = TextClockHuman(self.window, 120, self.data_human["TextClockHuman"].copy())
             self.text_status_human = TextStatusHuman(self.window, self.data_human["TextStatusHuman"].copy())
             self.text_esc = TextEsc(self.window, self.data_human["TextEsc"].copy())
         if self.mode == "AI":
@@ -78,7 +78,10 @@ class Gameplay():
                     if self.check_win():
                         self.text_status_AI.change_text("AI đã tìm ra lời giải!")
                     else:
-                        self.text_status_AI.change_text("AI không tìm ra được lời giải trong điều kiện giới hạn!")
+                        if self.check_can_solve():
+                            self.text_status_AI.change_text("AI không tìm ra được lời giải trong điều kiện giới hạn!")
+                        else:
+                            self.text_status_AI.change_text("AI nhận thấy bài này không thể giải được!")
                 if self.controller.handle_AI_action():
                     self.map.create_map()
             if event and event.type == pygame.MOUSEBUTTONDOWN:
@@ -97,7 +100,7 @@ class Gameplay():
                     if self.button_select_algorithm and self.button_select_algorithm.check_collided(pos):
                         self.button_select_algorithm.run_music()
                         if self.text_status_AI and not self.check_complete_AI():
-                            self.text_status_AI.change_text("Hãy đợi mô phỏng thuật toán hoàn thành!")
+                            self.text_status_AI.change_text("Hãy đợi mô phỏng thuật toán hoàn thành hoặc nhấn esc!")
                         elif self.text_status_AI:
                             self.text_status_AI.change_text("Đang mở hộp thoại thuật toán!")
                             self.button_select_algorithm.clicked()
@@ -105,23 +108,23 @@ class Gameplay():
                         self.button_extract.run_music()
                         name_algorithm = self.window.get_data("algorithm")
                         if len(name_algorithm) > 0 and self.text_status_AI:
-                            if self.controller and self.controller.algorithm_detail_dict:
-                                self.button_extract.extract_file(self.controller.algorithm_detail_dict, name_algorithm)
+                            if self.controller and self.controller.algorithm_step_list and self.controller.algorithm_detail_dict:
+                                pos_character_start = self.window.get_data("pos_history_list")[0]["pos_character"]
+                                path = self.controller.ai_algorithm.get_full_path(self.controller.algorithm_step_list, pos_character_start)
+                                dict_result = self.controller.algorithm_detail_dict.copy()
+                                dict_result["path"] = path 
+                                self.button_extract.extract_file(dict_result, name_algorithm)
                                 self.text_status_AI.change_text("Đã xuất file!")
                             else:
                                 self.text_status_AI.change_text("Không có dữ liệu để xuất!")
                         else:
-                            self.text_status_AI.change_text("Chưa chọn thuật toán!")
-                            
+                            self.text_status_AI.change_text("Chưa chọn thuật toán!")                    
 
         if event and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                if self.check_complete_AI():
-                    self.set_data()
-                    self.window.set_data("status_screen", "menu")
-                    self.window.set_data("menu_back", True)
-                elif self.text_status_AI:
-                    self.text_status_AI.change_text("Hãy đợi mô phỏng thuật toán hoàn thành!")
+                self.set_data()
+                self.window.set_data("status_screen", "menu")
+                self.window.set_data("menu_back", True)
         return True
     
     def set_data(self):
@@ -176,6 +179,10 @@ class Gameplay():
             return self.controller.check_win(self.mode) and not self.text_clock_human.check_time_out()
         elif self.mode == "AI":
             return self.controller.check_win(self.mode)
+    
+    def check_can_solve(self):
+        if self.mode == "AI":
+            return self.controller.check_can_solve(self.mode)
 
     def check_complete_AI(self):
         return self.controller.check_complete_AI()
@@ -468,24 +475,19 @@ class ButtonExtract():
             all_keys.update(item.keys())
         header = sorted(list(all_keys))
 
-        # Ghi header vào hàng đầu tiên
         ws.append(header)
         
-        # Style cho hyperlink
         hyperlink_font = Font(color="0000FF", underline="single")
 
-        # 3. Ghi dữ liệu vào từng hàng
-        for row_idx, item_dict in enumerate(data_list, start=2): # Bắt đầu từ hàng 2
+        for row_idx, item_dict in enumerate(data_list, start=2):
             for col_idx, key in enumerate(header, start=1):
                 value = item_dict.get(key)
                 cell = ws.cell(row=row_idx, column=col_idx)
 
                 if isinstance(value, dict):
-                    # Nếu giá trị là một dict -> tạo sheet mới
                     new_sheet_name = f"{safe_sheet_name}_{key}"
-                    self._process_and_write_sheet(wb, [value], new_sheet_name) # [value] vì hàm yêu cầu list
+                    self._process_and_write_sheet(wb, [value], new_sheet_name)
                     
-                    # Tạo hyperlink đến sheet mới
                     cell.value = f"[Xem sheet: {new_sheet_name[:31]}]"
                     cell.hyperlink = f"#'{new_sheet_name[:31]}'!A1"
                     cell.font = hyperlink_font
@@ -517,7 +519,6 @@ class ButtonExtract():
 
             self._process_and_write_sheet(wb, data_source, "Main_Data")
 
-            # Lưu file
             output_filename = f"{name_algorithm}_{filename}"
             wb.save(output_filename)
 

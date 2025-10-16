@@ -25,7 +25,15 @@ class Window():
             "menu_back" : False,
             "map_ori_list" : [
                 [],
-                [  # Level 1
+                [
+                "wwwwww",
+                "wgcgpw",
+                "wgbbgw",
+                "wggggw",
+                "wgggpw",
+                "wwwwww"
+                ],
+                [ 
                 "ewwwww",
                 "wwcppw",
                 "wgbbww",
@@ -33,29 +41,15 @@ class Window():
                 "wgggwe",
                 "wwwwwe"
                 ],
-                [  # Level 2
-                "wwwwwww",
-                "wppbppw",
-                "wppwppw",
-                "wgbbbgw",
-                "wggbggw",
-                "wgbbbcw",
-                "wgggggw",
-                "wwwwwww"
-                ],
-                [  # Level 3
-                "eeeewwwwweeeeeeeeew",
-                "eeeewgggweeeeeeeeee",
-                "eeeewbggweeeeeeeeee",
-                "eewwwggbwweeeeeeeee",
-                "eewggbgbgweeeeeeeee",
-                "wwwgwgwwgweeewwwwww",
-                "wgggwgwwgwwwwwggppw",
-                "wgbggbggggggggggppw",
-                "wwwwwgwwwgwcwwggppw",
-                "eeeewgggggwwwwwwwww",
-                "eeeewwwwwwweeeeeeee"
+                [  
+                "eewwww",
+                "wwwggw",
+                "wgbpgw",
+                "wggbgw",
+                "wpcgww",
+                "wwwwwe"  
                 ]
+
             ],
             "map_current" : [],
             "level" : 0,
@@ -97,11 +91,7 @@ class Window():
                     "zoom_current_rate" : None,
                     "zoom_init_rate" : None
                 },
-            },
-            "algorithm_list"  : [
-                "bfs",
-                "dfs"
-            ]
+            }
         }
         self.data = self.data_ori.copy()
 
