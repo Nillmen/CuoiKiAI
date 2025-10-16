@@ -8,5 +8,5 @@ Một trò chơi giải đố cổ điển, nơi người chơi phải đẩy c�
 
 Dưới đây là video demo của game, gồm vài thuật toán được chạy thử:
 
-![Demo video](https://github.com/Nillmen/CuoiKiAI/raw/Test/gameSokoban/videos/DemoAI_video.mp4)
+![Demo video](https://youtu.be/IacAnVzG4wc)
 
