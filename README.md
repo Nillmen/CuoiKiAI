@@ -8,5 +8,6 @@ Một trò chơi giải đố cổ điển, nơi người chơi phải đẩy c�
 
 Dưới đây là video demo của game, gồm vài thuật toán được chạy thử:
 
-![Demo video](https://youtu.be/IacAnVzG4wc)
+[![Watch the video](https://img.youtube.com/vi/abc123xyz/hqdefault.jpg)](https://www.youtube.com/watch?v=IacAnVzG4wc)
+
 
