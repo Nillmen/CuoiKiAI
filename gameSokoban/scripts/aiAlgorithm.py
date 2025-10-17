@@ -337,12 +337,11 @@ class AIAlgorithm():
             if self.box_is_blocked(newBoxX, newBoxY, boxes, index):
                 return True
             
-    def box_is_blocked(self,newX, newY, boxes, index=None):
-        dl = self.box_is_dead_lock_v1(newX, newY, boxes) if index is None else self.box_is_dead_lock_v2(newX, newY, boxes, index)
+    def box_is_blocked(self,newX, newY, boxes, index):
         return (
             self.map_data[newX][newY] == "w"
             or (newX, newY) in boxes
-            or dl
+            or self.box_is_dead_lock_v2(newX, newY, boxes, index)
         )
     
     def pushed_to_point(self,playerX, playerY, boxX, boxY):
