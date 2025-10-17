@@ -157,3 +157,12 @@ Dưới đây là video demo của game, gồm các thuật toán được chạ
 
 
 ---------------------------------------------------
+
+
+# Demo Unobservable agent
+
+
+![Demo](gameSokoban/videos/blind_search.gif)
+
+
+---------------------------------------------------
