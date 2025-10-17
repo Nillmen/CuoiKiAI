@@ -1,8 +1,8 @@
 import copy
 import time
 from collections import deque
-from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, forward_backtracking, hill_climbing, sa
-
+from scripts.algorithm import forward_tracking
+from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, hill_climbing, sa, ac3
 dict_algorithm = {
     "bfs" : bfs,
     "dfs" : dfs,
@@ -13,9 +13,10 @@ dict_algorithm = {
     "partially_observable" : partially_observable,
     "ucs" : ucs,
     "astar" : astar,
-    "forward_backtracking" : forward_backtracking,
+    "forward_tracking" : forward_tracking,
     "hill_climbing" : hill_climbing,
-    "sa" : sa
+    "sa" : sa,
+    "ac3" : ac3
 }
 
 class AIAlgorithm():
@@ -58,6 +59,26 @@ class AIAlgorithm():
                 pos_y = step[1] + full_path[i - 1][1]
             full_path.append((pos_x, pos_y))
         return full_path
+
+    def calculate_solution_cost(self,solution, player_start):
+
+        total_cost = 0
+        player_pos = tuple(player_start)
+        mapping = solution['mapping']
+        order = solution['order']
+
+        for i in order:
+            box_pos = list(mapping.keys())[i]
+            goal_pos = mapping[box_pos]
+
+            d1 = self.get_distance(player_pos[0], player_pos[1], box_pos[0], box_pos[1])
+            d2 = self.get_distance(box_pos[0], box_pos[1], goal_pos[0], goal_pos[1])
+
+            total_cost += d1 + d2
+            player_pos = goal_pos
+
+
+        return total_cost
 
     def add_data(self):
         self.boxPos.clear()
@@ -147,6 +168,41 @@ class AIAlgorithm():
             total += min_dist
         return total / len(boxes)
     
+    def can_move_box_to(self,box_pos, goal_pos, boxes): 
+        start = tuple(box_pos)
+        goal = tuple(goal_pos)
+
+        other_boxes = set(boxes)
+        if start in other_boxes:
+            other_boxes.remove(start)
+
+        q = deque([start])
+        visited = {start}
+
+        while q:
+            x, y = q.popleft()
+            if (x, y) == goal:
+                return True, boxes
+
+            for dx, dy in self.directions:
+                nx, ny = x + dx, y + dy        
+                backx, backy = x - dx, y - dy  
+
+                if not self.is_free(nx, ny, other_boxes):
+                    continue
+                if not self.is_free(backx, backy, other_boxes):
+                    continue
+
+                new_boxes = list(other_boxes) + [(nx, ny)]
+                if self.box_is_dead_lock(nx, ny, new_boxes, new_boxes.index((nx, ny))):
+                    continue
+
+                if (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    q.append((nx, ny))
+
+        return False, boxes
+
     def observe(self, playerX, playerY, boxes, len_queue=None, steps=None, depth=None, depth_limit=None,
             costH=None, costG=None, costF=None, mapNo=None, heat=None):
         state_info = {
@@ -266,7 +322,7 @@ class AIAlgorithm():
         return path
     
     def get_last_len_queue(self):
-        if self.observed_states[-1]["len_queue"]:
+        if len(self.observed_states) > 0 and self.observed_states[-1]["len_queue"]:
             return self.observed_states[-1]["len_queue"]
         else:
             return 0

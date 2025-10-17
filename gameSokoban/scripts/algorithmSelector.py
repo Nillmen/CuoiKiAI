@@ -1,7 +1,8 @@
 import pygame 
 import pygame_gui as pg
 import copy
-from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, forward_backtracking, hill_climbing, sa
+from scripts.algorithm import forward_tracking
+from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, hill_climbing, sa, ac3
 
 dict_algorithm = {
     "bfs" : bfs,
@@ -13,9 +14,10 @@ dict_algorithm = {
     "partially_observable" : partially_observable,
     "ucs" : ucs,
     "astar" : astar,
-    "forward_backtracking" : forward_backtracking,
+    "forward_tracking" : forward_tracking,
     "hill_climbing" : hill_climbing,
-    "sa" : sa
+    "sa" : sa,
+    "ac3" : ac3
 }
 class AlgorithmSelector:
     def __init__(self, window):
