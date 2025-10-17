@@ -195,7 +195,7 @@ class AIAlgorithm():
                     continue
 
                 new_boxes = list(other_boxes) + [(nx, ny)]
-                if self.box_is_dead_lock(nx, ny, new_boxes, new_boxes.index((nx, ny))):
+                if self.box_is_dead_lock_v1(nx, ny, new_boxes):
                     continue
 
                 if (nx, ny) not in visited:
@@ -337,17 +337,54 @@ class AIAlgorithm():
             if self.box_is_blocked(newBoxX, newBoxY, boxes, index):
                 return True
             
-    def box_is_blocked(self,newX, newY, boxes, index):
+    def box_is_blocked(self,newX, newY, boxes, index=None):
+        dl = self.box_is_dead_lock_v1(newX, newY, boxes) if index is None else self.box_is_dead_lock_v2(newX, newY, boxes, index)
         return (
             self.map_data[newX][newY] == "w"
             or (newX, newY) in boxes
-            or self.box_is_dead_lock(newX, newY, boxes, index)
+            or dl
         )
     
     def pushed_to_point(self,playerX, playerY, boxX, boxY):
         return (boxX + (boxX - playerX), boxY + (boxY - playerY))
+
+    def box_is_dead_lock_v1(self,x, y, boxes):
+        if (x, y) in self.endPointPos:
+            return False
+
+        boxes_set = set(boxes)
+        unmovables = set()
+
+        for b in boxes_set:
+            if b not in self.endPointPos and not self.is_pushable(b, boxes_set):
+                unmovables.add(b)
+
+
+        if (x, y) in unmovables:
+            adj_walls = sum(
+                1 for dx, dy in self.directions
+                if self.map_data[x + dx][y + dy] == 'w'
+            )
+            if adj_walls >= 2:
+                return True
             
-    def box_is_dead_lock(self, x, y, boxes, index):
+        for dx, dy in [(1, 0), (0, 1)]:
+            if (x + dx, y + dy) in unmovables:
+                return True
+
+    def is_pushable(self,box_pos, boxes):
+
+        x, y = box_pos
+        for dx, dy in self.directions:
+            front = (x + dx, y + dy)
+            back = (x - dx, y - dy)
+            if (front not in boxes and back not in boxes
+                and self.map_data[front[0]][front[1]] != 'w'
+                and self.map_data[back[0]][back[1]] != 'w'):
+                return True
+        return False
+
+    def box_is_dead_lock_v2(self, x, y, boxes, index):
         if (x, y) in self.endPointPos:
             return False
 
