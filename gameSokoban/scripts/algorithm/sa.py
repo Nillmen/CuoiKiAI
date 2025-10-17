@@ -4,7 +4,6 @@ import math
 import numpy as np
 
 def input_infor(self):
-    """Lấy thông tin đầu vào, bao gồm các tham số cho Simulated Annealing."""
     playerX, playerY = self.get_player_pos()
     self.sa_in_infor = {
         "pos_character_row": {"type": int, "value": playerX},
@@ -15,7 +14,6 @@ def input_infor(self):
     return self.sa_in_infor
 
 def check_input_infor(self, key_value_list):
-    """Kiểm tra tính hợp lệ của thông tin đầu vào."""
     try:
         x_new = int(list(key_value_list[0].values())[0])
         y_new = int(list(key_value_list[1].values())[0])
@@ -36,7 +34,6 @@ def check_input_infor(self, key_value_list):
     return True
 
 def change_input_infor(self, key_value_list=None):
-    """Cập nhật bản đồ và các tham số của thuật toán."""
     if not hasattr(self, 'sa_in_infor'):
         input_infor(self)
         
@@ -45,7 +42,10 @@ def change_input_infor(self, key_value_list=None):
     playerX_old, playerY_old = self.get_player_pos()
     if (playerX_new, playerY_new) != (playerX_old, playerY_old):
         self.map_data[playerX_new][playerY_new] = "c"
-        self.map_data[playerX_old][playerY_old] = "g"
+        if (playerY_old, playerX_old) in self.pos_endpoints:
+            self.map_data[playerX_old][playerY_old] = "p"
+        else:
+            self.map_data[playerX_old][playerY_old] = "g"
     self.window.set_data("map_current", self.map_data)
         
     if key_value_list and len(key_value_list) > 3:
