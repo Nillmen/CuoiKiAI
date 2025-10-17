@@ -2,7 +2,7 @@ import copy
 import time
 from collections import deque
 from scripts.algorithm import forward_tracking
-from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, hill_climbing, sa, ac3
+from scripts.algorithm import bfs, dfs, ids, greedy, beam, backtracking, partially_observable, ucs, astar, hill_climbing, sa, ac3, blind_search
 dict_algorithm = {
     "bfs" : bfs,
     "dfs" : dfs,
@@ -16,7 +16,8 @@ dict_algorithm = {
     "forward_tracking" : forward_tracking,
     "hill_climbing" : hill_climbing,
     "sa" : sa,
-    "ac3" : ac3
+    "ac3" : ac3,
+    "blind_search" : blind_search
 }
 
 class AIAlgorithm():
