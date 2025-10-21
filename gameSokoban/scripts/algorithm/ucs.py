@@ -55,7 +55,7 @@ def run(self):
 
     initial_state = (playerX, playerY, tuple(self.boxPos))
 
-    initial_cost = 1
+    initial_cost = 0
 
     queue = []
     heappush(queue, (initial_cost, initial_state, steps))  
@@ -85,13 +85,13 @@ def run(self):
             if self.player_is_blocked(playerX, playerY, newX, newY, boxes):
                 continue
 
-            cost_of_step = 1
+            cost_of_step = 2
             new_boxes = list(boxes)
             if (newX, newY) in boxes:
                 idx = boxes.index((newX, newY))
                 newBoxX, newBoxY = self.pushed_to_point(playerX, playerY, newX, newY)
                 new_boxes[idx] = (newBoxX, newBoxY)
-                cost_of_step = 2 
+                cost_of_step = 1
 
             new_state = (newX, newY, tuple(sorted(new_boxes)))
             new_cost = total_cost + cost_of_step

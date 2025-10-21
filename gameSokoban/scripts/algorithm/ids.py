@@ -16,7 +16,6 @@ def input_infor(self):
     return self.ids_in_infor
 
 def check_input_infor(self, key_value_list):
-    """Kiểm tra tính hợp lệ của thông tin đầu vào (tương tự BFS/DFS)."""
     for key_value in key_value_list:
         for key, value in key_value.items():
             try:
@@ -77,7 +76,7 @@ def run(self):
 
             state_count += 1
             current_depth = len(steps) - 1
-            self.observe(current_playerX, current_playerY, boxes, steps, depth=current_depth, depth_limit=depth_limit)
+            self.observe(current_playerX, current_playerY, boxes, len_queue=len(stack), steps=steps, depth=current_depth, depth_limit=depth_limit)
 
             if len(steps) > len(best_path):
                 best_path = steps.copy()

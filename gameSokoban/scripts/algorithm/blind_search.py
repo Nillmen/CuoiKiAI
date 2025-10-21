@@ -130,6 +130,8 @@ def run(self):
             
         radius += 1
 
+    print("valid_start_points", valid_start_points)
+
     if not valid_start_points:
          return self.save_result([], is_solution=False, state_count=0, step_count=0)
 
@@ -143,8 +145,10 @@ def run(self):
     if not all_solution_packages:
         return self.save_result([], is_solution=False, state_count=0, step_count=0)
 
-    
+    print("Số giải pháp,", len(all_solution_packages))
+    print("Các giải pháp:", all_solution_packages)
     random_choice = random.choice(all_solution_packages)
+    print("Đã chọn ", random_choice)
     origin_pos, result_data = random_choice
     final_path, final_state_count, final_step_count = result_data
     

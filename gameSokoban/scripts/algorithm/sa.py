@@ -34,8 +34,6 @@ def check_input_infor(self, key_value_list):
     return True
 
 def change_input_infor(self, key_value_list=None):
-    if not hasattr(self, 'sa_in_infor'):
-        input_infor(self)
         
     playerX_new = int(self.sa_in_infor["pos_character_row"]["value"])
     playerY_new = int(self.sa_in_infor["pos_character_col"]["value"])
@@ -67,7 +65,6 @@ def is_deadlock(self, box):
     return False
 
 def run(self):
-
     state_count = 0
     step_count = 0
     self.add_data()
@@ -99,7 +96,6 @@ def run(self):
 
         if self.check_limit_condition(step_count, time.perf_counter() - start_time):
             break
-
 
         (c_playerX, c_playerY, c_boxes) = current_state
         
@@ -141,7 +137,6 @@ def run(self):
             best_state = current_state
             best_path = current_path
             best_cost = current_cost
-        
         step_count += 1
         temperature *= cooling_rate
             
@@ -167,7 +162,8 @@ def calculate_heuristic(self, playerX, playerY, boxes):
             box_goal_assignment[best_box] = best_goal
             unassigned_boxes.remove(best_box)
             unassigned_goals.remove(best_goal)
-        else: break
+        else: 
+            break
 
     total_alignment_cost = 0
     player_pos = np.array([playerX, playerY])
@@ -186,7 +182,7 @@ def calculate_heuristic(self, playerX, playerY, boxes):
                 total_alignment_cost += np.sum(np.abs(player_pos - ideal_push_spot_coords))
     boxes_on_goal = sum(1 for b in boxes if b in self.endPointPos)
     reward = -10 * boxes_on_goal
-    return (1.0 * total_box_distance) + (0.7 * total_alignment_cost) + reward
+    return (1.0 * total_box_distance) + (0.6 * total_alignment_cost) + reward
 
 def is_goal_state(self, state):
     return all(box in self.endPointPos for box in state[2])
