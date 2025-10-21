@@ -51,7 +51,7 @@ class AIAlgorithm():
         full_path = []
         for i, step in enumerate(path_steps):
             pos_x = None
-            pos_x = None
+            pos_y = None
             if i == 0:
                 pos_x = step[0] + pos_start[0]
                 pos_y = step[1] + pos_start[1]
@@ -59,6 +59,8 @@ class AIAlgorithm():
                 pos_x = step[0] + full_path[i - 1][0]
                 pos_y = step[1] + full_path[i - 1][1]
             full_path.append((pos_x, pos_y))
+
+        full_path = [(y, x) for (x, y) in full_path]
         return full_path
 
     def calculate_solution_cost(self,solution, player_start):
